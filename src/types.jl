@@ -19,8 +19,10 @@ end
 for sys in (:GDZ, :GEI, :GEO, :GSM, :GSE, :MAG, :SM, :SPH)
     @eval struct $sys <: AbstractCoordinateSystem end
 
-    method_doc = """Construct a [`CoordinateVector`](@ref) in `$sys` coordinates."""
+    common_doc = "Construct a [`CoordinateVector`](@ref) in `$sys` coordinates."
+    method_doc = """    $sys(x, y, z)\n\n$common_doc"""
     @eval @doc $method_doc $sys(x, y, z) = CoordinateVector(promote(x, y, z)..., $sys())
+    method_doc = """    $sys(𝐫)\n\n$common_doc"""
     @eval @doc $method_doc $sys(𝐫) = CoordinateVector(𝐫..., $sys())
     @eval export $sys
 end
