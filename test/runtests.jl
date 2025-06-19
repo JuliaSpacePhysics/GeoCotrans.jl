@@ -50,3 +50,8 @@ end
     B_true = (458.89660058, 14996.72893889, -49019.55372591)
     @test all(igrf_B(𝐫, t) .≈ B_true)
 end
+
+@testitem "Aqua" begin
+    using Aqua
+    Aqua.test_all(GeoCotrans)
+end

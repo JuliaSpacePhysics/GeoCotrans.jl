@@ -10,9 +10,9 @@ export igrf_B, igrf_Bd
 include("igrf_coef.jl")
 
 check_year(year) =
-    if year > 2025 || year < 1900
-        error("IGRF-14 coefficients are not available for year $year")
-    end
+if year > 2025 || year < 1900
+    error("IGRF-14 coefficients are not available for year $year")
+end
 
 """
     get_igrf_coeffs(time)
@@ -35,7 +35,7 @@ function get_igrf_coeffs!(g, h, time)
     year0, ratio = _get_year0_ratio(time)
     g0, h0, dg, dh = @inbounds igrf_lookup[year0]
     @. g = dg * ratio + g0
-    @. h = dh * ratio + h0
+    return @. h = dh * ratio + h0
 end
 
 @inline function _get_year0_ratio(time)
@@ -76,7 +76,7 @@ function get_dipole_terms(g, h)
 end
 
 
-delta(x, x0=0) = x == x0 ? 1 : 0
+delta(x, x0 = 0) = x == x0 ? 1 : 0
 
 """
     Schmidt_normalization(l, m)
@@ -84,15 +84,16 @@ delta(x, x0=0) = x == x0 ? 1 : 0
 Compute Schmidt normalization factor for degree l and order m.
 
 Reference: [Geomagnetism and Schmidt quasi-normalization]\
-    (https://academic.oup.com/gji/article/160/2/487/659348)
+(https://academic.oup.com/gji/article/160/2/487/659348)
 """
 function Schmidt_normalization(l, m)
-    (-1)^m * sqrt(2 - delta(m)) / prod(sqrt, l-m+1:l+m; init=1)
+    return (-1)^m * sqrt(2 - delta(m)) / prod(sqrt, (l - m + 1):(l + m); init = 1)
 end
 
 
-function igrf_V(r, θ::Tθ, φ::Tφ, t; max_degree=IGRF_degree) where {Tθ,Tφ}
-    @no_escape begin
+function igrf_V(r, θ::Tθ, φ::Tφ, t; max_degree = nothing) where {Tθ, Tφ}
+    max_degree = something(max_degree, IGRF_degree)
+    return @no_escape begin
         Plms = @alloc(Tθ, max_degree + 1, max_degree + 1)
         legendre!(Val(:schmidt), Plms, θ, max_degree)
         sin_mφs = @alloc(Tφ, max_degree + 1)
@@ -109,8 +110,8 @@ function igrf_V(r, θ::Tθ, φ::Tφ, t; max_degree=IGRF_degree) where {Tθ,Tφ}
             Vl = 0
             for m in 0:l
                 k = k0 + m
-                Pₗₘ = Plms[l+1, m+1]
-                Vl += Pₗₘ * (g[k] * cos_mφs[m+1] + h[k] * sin_mφs[m+1])
+                Pₗₘ = Plms[l + 1, m + 1]
+                Vl += Pₗₘ * (g[k] * cos_mφs[m + 1] + h[k] * sin_mφs[m + 1])
             end
             V += (R🜨 / r)^(l + 1) * Vl
         end
@@ -131,10 +132,10 @@ at time `t`.
 - φ: longitude [rad], positive east
 - max_degree: highest degree of expansion (1 <= max_degree <= 13)
 """
-function igrf_B(r, θ, φ, t; max_degree=IGRF_degree)
-    θ = max(1e-8, θ)  # Avoid division by zero at poles
+function igrf_B(r, θ, φ, t; kws...)
+    θ = max(1.0e-8, θ)  # Avoid division by zero at poles
     x = SA[r, θ, φ]
-    f(x) = igrf_V(x[1], x[2], x[3], t; max_degree)
+    f(x) = igrf_V(x[1], x[2], x[3], t; kws...)
     dV = ForwardDiff.gradient(f, x)
     Br = -dV[1]
     Bθ = -dV[2] / r
@@ -202,5 +203,5 @@ Compute dipole direction in GEO coordinates. [IRBEM]
 function calc_dipole_geo(time)
     g, h = get_igrf_coeffs(time)
     θ, φ = @inbounds calc_dipole_angle(g[2], g[3], h[3])
-    return SA[sin(θ)*cos(φ), sin(θ)*sin(φ), cos(θ)]
+    return SA[sin(θ) * cos(φ), sin(θ) * sin(φ), cos(θ)]
 end
