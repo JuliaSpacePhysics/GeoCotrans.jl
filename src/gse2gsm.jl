@@ -9,7 +9,7 @@ This transformation is a rotation in the GSE YZ plane from the GSE Z axis to the
 function gse2gsm_mat(time)
     dipole_gei = geo2gei_mat(time) * calc_dipole_geo(time)
     # Get sun direction parameters
-    _, _, sra, sdec, obliq = csundir(time)
+    _, sra, sdec, _, obliq = csundir(time)
     sun_gei = calc_sun_gei(sra, sdec)
     # Calculate ecliptic pole direction in GEI
     pole_gei = SA[0.0, -sin(obliq), cos(obliq)]

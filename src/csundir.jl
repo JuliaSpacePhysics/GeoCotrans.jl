@@ -11,13 +11,7 @@ function calculate_gst(time)
     return ct2lst(0, jdcnv(time)) * 2π / 24
 end
 
-"""
-    calculate_gst_alt(time)
-
-Alternative implementation of Greenwich sidereal time calculation based on the
-reference algorithm from `pyspedas.cotrans_tools.csundir_vect`.
-"""
-function calculate_gst_alt(time::DateTime)
+function _calculate_gst_alt(time::DateTime)
     # Extract time components
     iyear = year(time)
     idoy = dayofyear(time)
@@ -26,65 +20,64 @@ function calculate_gst_alt(time::DateTime)
     jj = 365 * (iyear - 1900) + floor((iyear - 1901) / 4) + idoy
     dj = jj - 0.5 + fday
     gst = mod(279.690983 + 0.9856473354 * dj + 360.0 * fday + 180.0, 360.0)
-    return gst * 2π / 360
+    return deg2rad(gst), dj
 end
 
-calculate_gst_alt(x) = calculate_gst_alt(DateTime(x))
+"""
+    calculate_gst_alt(time)
+
+Alternative implementation of Greenwich sidereal time calculation based on the
+reference algorithm from `pyspedas.cotrans_tools.csundir_vect`.
+"""
+calculate_gst_alt(time) = _calculate_gst_alt(DateTime(time)) |> first
+
+function csundir_astrolib(time)
+    jd = jdcnv(time)
+    gst = ct2lst(0, jd) * 2π / 24
+    return gst, sunpos(jd; radians = true)...
+end
 
 """
-    csundir(time)
+    csundir(time) -> (gst, ra, dec, elong, obliq)
 
-Calculate the direction of the sun.
+Calculate the direction of the sun, returns a tuple of `(gst, ra, dec, elong, obliq)` in radians.
 
-# Returns
-- `gst`: Greenwich mean sidereal time (radians)
-- `slong`: Longitude along ecliptic (radians)
-- `sra`: Right ascension (radians)
-- `sdec`: Declination of the sun (radians)
-- `obliq`: Inclination of Earth's axis (radians)
+- `gst`: Greenwich mean sidereal time
+- `ra`: Right ascension
+- `dec`: Declination of the sun
+- `elong`: ecliptic longitude
+- `obliq`: Inclination of Earth's axis
 
-# Notes
-- This function calculates various parameters related to the sun's position
-  needed for coordinate transformations.
+See also [`AstroLib.sunpos`](https://juliaastro.org/AstroLib/stable/ref/#AstroLib.sunpos).
 """
 function csundir(time)
     # Convert time to year, day of year, hour, minute, second
     dt = time isa DateTime ? time : DateTime(time)
-    year = Dates.year(dt)
-    doy = Dates.dayofyear(dt)
-
-    # Julian day and Greenwich mean sidereal time
-    pisd = π / 180.0
-    fday = Time(dt).instant / Day(1)
-    jj = 365 * (year - 1900) + floor((year - 1901) / 4) + doy
-    dj = jj - 0.5 + fday
-    gst = mod(279.690983 + 0.9856473354 * dj + 360.0 * fday + 180.0, 360.0) * pisd
+    gst, dj = _calculate_gst_alt(dt)
 
     # Longitude along ecliptic
     vl = mod(279.696678 + 0.9856473354 * dj, 360.0)
     t = dj / 36525.0
-    g = mod(358.475845 + 0.985600267 * dj, 360.0) * pisd
-    slong = (vl + (1.91946 - 0.004789 * t) * sin(g) + 0.020094 * sin(2.0 * g)) * pisd
+    g = deg2rad(mod(358.475845 + 0.985600267 * dj, 360.0))
+    elong = deg2rad(vl + (1.91946 - 0.004789 * t) * sin(g) + 0.020094 * sin(2.0 * g))
 
     # Inclination of Earth's axis
-    obliq = (23.45229 - 0.0130125 * t) * pisd
+    obliq = deg2rad(23.45229 - 0.0130125 * t)
     sob = sin(obliq)
     cob = cos(obliq)
 
     # Aberration due to Earth's motion around the sun (about 0.0056 deg)
-    pre = (0.005686 - 0.025e-4 * t) * pisd
+    pre = deg2rad(0.005686 - 0.025e-4 * t)
 
     # Declination of the sun
-    slp = slong - pre
+    slp = elong - pre
     sind = sob * sin(slp)
     cosd = sqrt(1.0 - sind^2)
     sc = sind / cosd
-    sdec = atan(sc)
+    dec = atan(sc)
+    ra = π - atan((cob / sob) * sc, -cos(slp) / cosd)
 
-    # Right ascension of the sun
-    sra = π - atan((cob / sob) * sc, -cos(slp) / cosd)
-
-    return gst, slong, sra, sdec, obliq
+    return gst, ra, dec, elong, obliq
 end
 
 """
@@ -93,13 +86,12 @@ end
 Calculate sun direction vector in GEI given right ascension `ra` and declination `dec`.
 """
 calc_sun_gei(ra, dec) =
-    SA[cos(ra)*cos(dec), sin(ra)*cos(dec), sin(dec)]
+    SA[cos(ra) * cos(dec), sin(ra) * cos(dec), sin(dec)]
 
 function calc_sun_gei(time)
-    _, _, ra, dec, _ = csundir(time)
+    _, ra, dec = csundir(time)
     return calc_sun_gei(ra, dec)
 end
-
 
 
 function sun_dipole()

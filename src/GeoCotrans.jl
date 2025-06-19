@@ -58,7 +58,7 @@ using Dates
 using Dates: AbstractTime
 using LinearAlgebra
 using StaticArrays
-using AstroLib: ct2lst, jdcnv
+using AstroLib: ct2lst, jdcnv, sunpos
 
 include("constants.jl")
 include("types.jl")
