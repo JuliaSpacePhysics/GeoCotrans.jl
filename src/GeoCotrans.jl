@@ -4,13 +4,12 @@ Coordinate systems, transformations, and geomagnetic field models.
 ## Coordinate systems
 
 - [`GEO`](@ref): $(description(GEO))
-- [`GSM`](@ref): Geocentric Solar Magnetic (GSM) coordinate system.
-- [`GSE`](@ref): Geocentric Solar Ecliptic (GSE) coordinate system.
-- [`GEI`](@ref): Geocentric Equatorial Inertial (GEI) coordinate system.
+- [`GSM`](@ref): $(description(GSM))
+- [`GSE`](@ref): $(description(GSE))
+- [`GEI`](@ref): $(description(GEI))
 - [`GDZ`](@ref): $(description(GDZ))
-- [`MAG`](@ref): Magnetic (MAG) coordinate system.
+- [`MAG`](@ref): $(description(MAG))
 - [`SPH`](@ref): $(description(SPH))
-- [`J2000`](@ref): J2000 (J2000) coordinate system.
 
 ## Coordinate transformations
 
@@ -36,7 +35,7 @@ Coordinate systems, transformations, and geomagnetic field models.
 ```julia
 r, θ, φ = 6500., 30., 4.
 t = Date(2021, 3, 28)
-Br, Bθ, Bφ = igrf_B(r, θ, φ, t)
+Br, Bθ, Bφ = igrf_Bd(r, θ, φ, t)
 
 # Input position in geodetic coordinates, output magnetic field in East-North-Up (ENU) coordinates
 Be, Bn, Bu = igrf_B(GDZ(0, 60.39299, 5.32415), t)
@@ -110,25 +109,6 @@ for p in coord_pairs
     @eval @doc $doc $func(x, t)=$matfunc(t) * x
     @eval export $func
 end
-
-function description(::Type{GDZ})
-    "Geodetic (GDZ) coordinate system `(altitude [km], latitude [deg], longitude [deg])`."
-end
-function long_description(::Type{GDZ})
-    """Defined using a reference ellipsoid. Both the altitude and latitude depend on the ellipsoid used. GeoCotrans uses the WGS84 reference ellipsoid."""
-end
-
-function description(::Type{GEO})
-    "Geocentric geographic cartesian coordinate system `(x [𝐋], y [𝐋], z [𝐋])`."
-end
-description(::Type{GSM}) = "Geocentric Solar Magnetic (GSM) coordinate system."
-description(::Type{GSE}) = "Geocentric Solar Ecliptic (GSE) coordinate system."
-description(::Type{GEI}) = "Geocentric Equatorial Inertial (GEI) coordinate system."
-description(::Type{MAG}) = "Magnetic (MAG) coordinate system."
-function description(::Type{SPH})
-    "Geocentric geographic spherical (SPH) coordinate system `(r [𝐋], θ [deg], φ [deg])`."
-end
-description(::Type{J2000}) = "J2000 (J2000) coordinate system."
 
 export gdz2sph
 
