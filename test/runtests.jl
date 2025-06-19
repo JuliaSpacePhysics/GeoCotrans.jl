@@ -16,7 +16,7 @@ using TestItems, TestItemRunner
         [245.0, -102.0, 251.0],
         [121.0, 545.0, -1.0],
         [304.65, -205.3, 856.1],
-        [464.34, -561.55, -356.22]
+        [464.34, -561.55, -356.22],
     ]
 
     # Convert Unix timestamps to DateTime objects
@@ -25,7 +25,7 @@ using TestItems, TestItemRunner
         unix2datetime(1577112800),
         unix2datetime(1577598800),
         unix2datetime(1577608800),
-        unix2datetime(1577998800)
+        unix2datetime(1577998800),
     ]
 
     # Create a DimArray with the test data
@@ -54,4 +54,10 @@ end
 @testitem "Aqua" begin
     using Aqua
     Aqua.test_all(GeoCotrans)
+end
+
+@testitem "JET" begin
+    using JET
+    @test_call GeoCotrans.workload()
+    @test_opt GeoCotrans.workload()
 end

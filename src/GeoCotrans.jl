@@ -70,6 +70,7 @@ include("geo2gei.jl")
 include("gei2gsm.jl")
 include("gse2gsm.jl")
 include("gdz2geo.jl")
+include("workload.jl")
 
 const coord_text = Dict(
     :geo => "Geographic (GEO)",
