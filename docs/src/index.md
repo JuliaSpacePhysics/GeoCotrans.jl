@@ -11,6 +11,19 @@ using Pkg
 Pkg.add("GeoCotrans")
 ```
 
+## Coordinate Systems
+
+```@docs; canonical=false
+GDZ
+GEI
+GEO
+GSM
+GSE
+MAG
+SM
+SPH
+```
+
 ## API Reference
 
 ### Public
