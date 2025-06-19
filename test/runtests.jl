@@ -37,6 +37,23 @@ using TestItems, TestItemRunner
     @test isapprox(gsm_da[Ti = 1], expected_gsm)
 end
 
+@testitem "Validation with AstroLib" begin
+    using Dates
+    for yr in 2010:2025
+        dt = Date(yr, 1, 1)
+        # test GST
+        @test isapprox(GeoCotrans.calculate_gst(dt), GeoCotrans.calculate_gst_alt(dt), rtol = 5.0e-4)
+        # test csundir
+        @test all(isapprox.(GeoCotrans.csundir_astrolib(dt), GeoCotrans.csundir(dt), rtol = 5.0e-4))
+    end
+
+    using Chairmarks
+    dt = Date(2021, 3, 28)
+
+    @info @b GeoCotrans.csundir_astrolib($dt)
+    @info @b GeoCotrans.csundir($dt)
+end
+
 @testitem "IGRF get_B" begin
     using Dates
 
