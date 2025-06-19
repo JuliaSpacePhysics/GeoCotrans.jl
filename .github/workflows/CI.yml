@@ -69,10 +69,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
-      - name: Run doctests
-        shell: julia --project=docs --color=yes {0}
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Insert navbar
+        uses: TuringLang/actions/DocsNav@main
+        with:
+          doc-path: "gh-pages"
+          navbar-url: "https://raw.githubusercontent.com/JuliaSpacePhysics/juliaspacephysics.github.io/refs/heads/main/docs/Navbar.html"
+      - name: Commit and push changes
+        working-directory: gh-pages
         run: |
-          using Documenter: DocMeta, doctest
-          using GeoCotrans
-          DocMeta.setdocmeta!(GeoCotrans, :DocTestSetup, :(using GeoCotrans); recursive=true)
-          doctest(GeoCotrans)
+          if [[ -n $(git status -s) ]]; then
+            git config user.name github-actions[bot]
+            git config user.email github-actions[bot]@users.noreply.github.com
+            git add -A
+            git commit -m "Update navbar (automated)"
+            git push
+          else
+            echo "No changes to commit"
+          fi
