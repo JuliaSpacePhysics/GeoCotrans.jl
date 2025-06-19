@@ -159,6 +159,8 @@ at time `t`.
 igrf_Bd(r, θ, φ, t; kw...) = igrf_B(r, deg2rad(θ), deg2rad(φ), t; kw...)
 
 
+igrf_B(r::CoordinateVector{SPH}, t; kw...) = igrf_Bd(r[1], r[2], r[3], t; kw...)
+
 """
     igrf_B(𝐫::CoordinateVector{GDZ}, t; max_degree=IGRF_degree) -> (Be, Bn, Bu)
 
