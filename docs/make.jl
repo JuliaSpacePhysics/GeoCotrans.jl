@@ -15,6 +15,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/juliaspacephysics/GeoCotrans.jl",
+    repo = "github.com/JuliaSpacePhysics/GeoCotrans.jl",
     push_preview = true
 )

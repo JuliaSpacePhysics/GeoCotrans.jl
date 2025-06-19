@@ -51,7 +51,9 @@ function matrix_form(g)
     return M
 end
 
+const SV = SVector{105}
+
 const igrf_lookup = dictionary(
-    i => (igrf_ga[i], igrf_ha[i], igrf_ga[i+5] .- igrf_ga[i], igrf_ha[i+5] .- igrf_ha[i])
+    i => (SV(igrf_ga[i]), SV(igrf_ha[i]), SV(igrf_ga[i+5] .- igrf_ga[i]), SV(igrf_ha[i+5] .- igrf_ha[i]))
     for i in IGRF_min_year:5:IGRF_max_year-5
 )
