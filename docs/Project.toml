@@ -1,0 +1,3 @@
+[deps]
+GeoCotrans = "4624b3bc-fe35-44f8-bfa8-722ff9c0e307"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
