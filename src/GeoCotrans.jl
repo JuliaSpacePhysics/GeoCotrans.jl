@@ -59,6 +59,10 @@ using Dates: AbstractTime
 using LinearAlgebra
 using StaticArrays
 using AstroLib: ct2lst, jdcnv, sunpos
+using SpaceDataModel: AbstractCoordinateSystem
+import SpaceDataModel: getcsys
+
+export CoordinateVector, getcsys
 
 include("constants.jl")
 include("types.jl")

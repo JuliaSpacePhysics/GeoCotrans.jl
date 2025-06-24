@@ -1,9 +1,12 @@
-using GeoCotrans
-using Test
 using TestItems, TestItemRunner
 @run_package_tests
 
 # https://github.com/spedas/pyspedas/blob/master/pyspedas/cotrans_tools/tests/cotrans.py
+
+@testitem "CoordinateVector" begin
+    𝐫 = GDZ(0, 60.39299, 5.32415)
+    @test getcsys(𝐫) == GDZ()
+end
 
 @testitem "gse2gsm" begin
     using Dates
