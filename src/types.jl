@@ -1,9 +1,3 @@
-import Base: String
-
-export AbstractCoordinateSystem, CoordinateVector, coord
-
-abstract type AbstractCoordinateSystem end
-
 """
     CoordinateVector{C, T}
 
@@ -51,6 +45,4 @@ for sys in (:GEO, :GEI, :GSE, :SM, :SPH, :MAG)
     @eval @doc description($sys) $sys
 end
 
-coord(v::CoordinateVector) = v.sym
-Base.String(::Type{S}) where {S <: AbstractCoordinateSystem} = String(nameof(S))
-Base.String(::S) where {S <: AbstractCoordinateSystem} = T(S)
+getcsys(v::CoordinateVector) = v.sym
