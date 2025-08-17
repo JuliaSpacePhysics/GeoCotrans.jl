@@ -17,7 +17,7 @@ for sys in (:GDZ, :GEI, :GEO, :GSM, :GSE, :MAG, :SM, :SPH)
     method_doc = """    $sys(x, y, z)\n\n$common_doc"""
     @eval @doc $method_doc $sys(x, y, z) = CoordinateVector(promote(x, y, z)..., $sys())
     method_doc = """    $sys(𝐫)\n\n$common_doc"""
-    @eval @doc $method_doc $sys(𝐫) = CoordinateVector(𝐫..., $sys())
+    @eval @doc $method_doc $sys(𝐫) = (@assert length(𝐫) == 3; CoordinateVector(𝐫[1], 𝐫[2], 𝐫[3], $sys()))
     @eval export $sys
 end
 
