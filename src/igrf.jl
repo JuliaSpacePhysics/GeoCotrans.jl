@@ -27,7 +27,7 @@ function get_igrf_coeffs(time)
     g0, h0, dg, dh = @inbounds igrf_lookup[year0]
     g = @~ @. dg * ratio + g0
     h = @~ @. dh * ratio + h0
-    return g, h
+    return LazyArray(g), LazyArray(h)
 end
 
 
@@ -38,12 +38,11 @@ function get_igrf_coeffs!(g, h, time)
     return @. h = dh * ratio + h0
 end
 
-@inline function _get_year0_ratio(time)
-    # Convert time to year and day of year
-    dt = time isa Date ? time : Date(time)
+@inline function _get_year0_ratio(time, T = DateTime)
+    dt = time isa T ? time : T(time)
     year0 = year(dt) ÷ 5 * 5
     check_year(year0)
-    t0, tf = Date(year0), Date(year0 + 5)
+    t0, tf = T(year0), T(year0 + 5)
     ratio = (dt - t0) / (tf - t0)
     return year0, ratio
 end
