@@ -1,4 +1,5 @@
-using ForwardDiff
+# using ForwardDiff 
+# ReverseDiff does not work with `UnsafeArray`
 using SatelliteToolboxLegendre
 
 using Bumper
@@ -131,16 +132,75 @@ at time `t`.
 - φ: longitude [rad], positive east
 - max_degree: highest degree of expansion (1 <= max_degree <= 13)
 """
-function igrf_B(r, θ, φ, t; kws...)
-    θ = clamp(θ, 1.0e-8, π - 1.0e-8)  # Avoid division by zero at poles
-    x = SA[r, θ, φ]
-    f(x) = igrf_V(x[1], x[2], x[3], t; kws...)
-    dV = ForwardDiff.gradient(f, x)
-    Br = -dV[1]
-    Bθ = -dV[2] / r
-    Bφ = -dV[3] / (r * sin(θ))
-    return Br, Bθ, Bφ
+function igrf_B(r, θ, φ, t; max_degree = nothing)
+    max_degree = something(max_degree, IGRF_degree)
+
+    θ = clamp(θ, 1.0e-8, π - 1.0e-8)
+    return @no_escape begin
+        Plms = @alloc(typeof(θ), max_degree + 1, max_degree + 1)
+        legendre!(Val(:schmidt), Plms, θ, max_degree)
+
+        sin_mφs = @alloc(typeof(φ), max_degree + 1)
+        cos_mφs = @alloc(typeof(φ), max_degree + 1)
+        for m in eachindex(sin_mφs, cos_mφs)
+            sin_mφs[m], cos_mφs[m] = sincos((m - 1) * φ)
+        end
+
+        g = @alloc(Float64, coeff_size(max_degree))
+        h = @alloc(Float64, coeff_size(max_degree))
+        get_igrf_coeffs!(g, h, t)
+
+        st, ct = sincos(θ)
+
+        Br = 0.0
+        Bθ = 0.0
+        Bφ = 0.0
+
+        ar = R🜨 / r
+        pow = ar * ar * ar
+
+        for l in 1:max_degree
+            k0 = l * (l + 1) ÷ 2 + 1
+            Vl = 0.0
+            dVl = 0.0
+            φVl = 0.0
+
+            for m in 0:l
+                k = k0 + m
+                Pₗₘ = Plms[l + 1, m + 1]
+                w = g[k] * cos_mφs[m + 1] + h[k] * sin_mφs[m + 1]
+                Vl += Pₗₘ * w
+
+                Pₗ₋₁ₘ = m > l - 1 ? 0.0 : Plms[l, m + 1]
+                schmidt_ratio = m > l - 1 ? 0.0 : sqrt((l - m) / (l + m))
+                dPₗₘ = (l * ct * Pₗₘ - (l + m) * schmidt_ratio * Pₗ₋₁ₘ) / st
+                dVl += dPₗₘ * w
+
+                if m != 0   
+                    φVl += m * Pₗₘ * (g[k] * sin_mφs[m + 1] - h[k] * cos_mφs[m + 1])
+                end
+            end
+
+            Br += (l + 1) * pow * Vl
+            Bθ -= pow * dVl
+            Bφ += pow * φVl
+            pow *= ar
+        end
+
+        Br, Bθ, Bφ / st
+    end
 end
+
+# function igrf_B(r, θ, φ, t; kws...)
+#     θ = clamp(θ, 1.0e-8, π - 1.0e-8)  # Avoid division by zero at poles
+#     x = SA[r, θ, φ]
+#     f(x) = igrf_V(x[1], x[2], x[3], t; kws...)
+#     dV = ForwardDiff.gradient(f, x)
+#     Br = -dV[1]
+#     Bθ = -dV[2] / r
+#     Bφ = -dV[3] / (r * sin(θ))
+#     return Br, Bθ, Bφ
+# end
 
 
 """
