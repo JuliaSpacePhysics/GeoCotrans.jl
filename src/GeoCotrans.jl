@@ -95,6 +95,7 @@ const coord_pairs = (
 geo2gsm_mat(t) = gei2gsm_mat(t) * geo2gei_mat(t)
 gsm2geo_mat(t) = inv(geo2gsm_mat(t))
 
+coord_type(s::Symbol) = Symbol(uppercase(string(s)))
 for p in coord_pairs
     func = Symbol(p[1], "2", p[2])
     doc = """$(func)(x, t)
@@ -104,6 +105,11 @@ for p in coord_pairs
 
     matfunc = Symbol(func, :_mat)
     @eval @doc $doc $func(x, t) = $matfunc(t) * x
+    T1, T2 = coord_type.(p)
+    @eval function $func(x::CoordinateVector, t)
+        @assert getcsys(x) == $T1()
+        $T2($matfunc(t) * x)
+    end
     @eval export $func
 end
 

@@ -13,6 +13,9 @@ end
     using Dates
     using DimensionalData
 
+    @test gse2gsm(GSE(1, 2, 3), Date(2021, 1, 1)) isa CoordinateVector{GSM}
+    @test_throws AssertionError gse2gsm(GSM(1, 2, 3), Date(2021, 1, 1))
+
     # Test GSE->GSM transformation
     # Data from Python test case
     data = [
@@ -38,7 +41,7 @@ end
 
     # Check that the transformation worked correctly
     expected_gsm = [775.0, 11.70357713, -7.93890939]
-    @test isapprox(gsm_da[Ti = 1], expected_gsm)
+    @test gsm_da[Ti = 1] ≈ expected_gsm rtol = 1.0e-6
 end
 
 @testitem "Validation with AstroLib" begin
