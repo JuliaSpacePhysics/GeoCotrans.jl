@@ -1,3 +1,4 @@
+using StaticArrays: Size
 """
     CoordinateVector{C, T}
 
@@ -9,6 +10,13 @@ struct CoordinateVector{C, T} <: FieldVector{3, T}
     z::T
     sym::C
 end
+
+function CoordinateVector{C, T}(x, y, z) where {C, T}
+    CoordinateVector{C, T}(x, y, z, C())
+end
+
+StaticArrays.similar_type(::Type{CoordinateVector{C, T1}}, ::Type{T2}, S::Size) where {C, T1, T2} =
+    CoordinateVector{C, T2}
 
 for sys in (:GDZ, :GEI, :GEO, :GSM, :GSE, :MAG, :SM, :SPH)
     @eval struct $sys <: AbstractCoordinateSystem end

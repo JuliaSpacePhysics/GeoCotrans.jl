@@ -4,8 +4,9 @@ using TestItems, TestItemRunner
 # https://github.com/spedas/pyspedas/blob/master/pyspedas/cotrans_tools/tests/cotrans.py
 
 @testitem "CoordinateVector" begin
-    𝐫 = GDZ(0, 60.39299, 5.32415)
+    𝐫 = GDZ(0, 60, 5)
     @test getcsys(𝐫) == GDZ()
+    @test 𝐫 .* 2.0 isa CoordinateVector{GDZ}
 end
 
 @testitem "gse2gsm" begin
