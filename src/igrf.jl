@@ -5,7 +5,7 @@ using Bumper
 using LazyArrays
 
 export get_igrf_coeffs, get_igrf_coeffs!
-export igrf_B, igrf_Bd
+export igrf, igrf_B, igrf_Bd
 
 include("igrf_coef.jl")
 
@@ -132,7 +132,7 @@ at time `t`.
 - max_degree: highest degree of expansion (1 <= max_degree <= 13)
 """
 function igrf_B(r, θ, φ, t; kws...)
-    θ = max(1.0e-8, θ)  # Avoid division by zero at poles
+    θ = clamp(θ, 1.0e-8, π - 1.0e-8)  # Avoid division by zero at poles
     x = SA[r, θ, φ]
     f(x) = igrf_V(x[1], x[2], x[3], t; kws...)
     dV = ForwardDiff.gradient(f, x)
@@ -159,13 +159,8 @@ igrf_Bd(r, θ, φ, t; kw...) = igrf_B(r, deg2rad(θ), deg2rad(φ), t; kw...)
 
 
 igrf_B(r::CoordinateVector{SPH}, t; kw...) = igrf_Bd(r[1], r[2], r[3], t; kw...)
+igrf(𝐫::CoordinateVector{GSM}, t) = igrf_Bgsm(𝐫, t)
 
-"""
-    igrf_B(𝐫::CoordinateVector{GDZ}, t; max_degree=IGRF_degree) -> (Be, Bn, Bu)
-
-Calculate IGRF model components in east, north, up (ENU) coordinates
-for geodetic coordinates `𝐫` at time `t`.
-"""
 function igrf_B(𝐫::CoordinateVector{GDZ}, t)
     alt, gdlat, gdlon = 𝐫
     r, colat, lon = gdz2sph(alt, gdlat, gdlon)
@@ -178,6 +173,14 @@ function igrf_B(𝐫::CoordinateVector{GDZ}, t)
     return Be, Bn, Bu
 end
 
+@inline igrf(args...; kw...) = igrf_B(args...; kw...)
+
+function igrf_Bgsm(𝐫, t)
+    sph = gsm2sph(𝐫, t)
+    𝐁 = igrf_B(sph, t)
+    Bgeo = bsp2car(𝐁, sph)
+    return geo2gsm(Bgeo, t)
+end
 
 """
     calc_dipole_angle(g10, g11, h11)

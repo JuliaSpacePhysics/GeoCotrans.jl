@@ -28,7 +28,7 @@ Coordinate systems, transformations, and geomagnetic field models.
 
 ### Functions
 
-- [`igrf_B`](@ref): Compute the geomagnetic field (IGRF-14, dipole model)
+- [`igrf`](@ref) / [`igrf_B`](@ref): Compute the geomagnetic field (IGRF-14)
 
 ### Examples
 
@@ -64,6 +64,7 @@ import SpaceDataModel: getcsys
 
 export CoordinateVector, getcsys
 
+include("api.jl")
 include("constants.jl")
 include("types.jl")
 include("igrf.jl")
@@ -108,7 +109,7 @@ for p in coord_pairs
     T1, T2 = coord_type.(p)
     @eval function $func(x::CoordinateVector, t)
         @assert getcsys(x) == $T1()
-        $T2($matfunc(t) * x)
+        return $T2($matfunc(t) * x)
     end
     @eval export $func
 end
