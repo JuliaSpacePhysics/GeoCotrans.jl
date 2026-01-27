@@ -109,9 +109,16 @@ for p in coord_pairs
     T1, T2 = coord_type.(p)
     @eval function $func(x::CoordinateVector, t)
         @assert getcsys(x) == $T1()
-        return $T2($matfunc(t) * x)
+        return $T2(($matfunc(t) * x)..., t)
     end
     @eval export $func
+
+    @eval function $T2(x::CoordinateVector{$T1}, t)
+        return $T2(($matfunc(t) * x)..., t)
+    end
+    @eval function $T2(x::CoordinateVector{$T1})
+        return $T2(x, x.t)
+    end
 end
 
 export gdz2sph

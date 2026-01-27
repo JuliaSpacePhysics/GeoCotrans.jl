@@ -1,8 +1,7 @@
 # https://pyspedas.readthedocs.io/en/latest/coords.html#pyspedas.cotrans_tools.cotrans_lib.subgeo2gei
 
 @inline function gei2geo_mat(gst)
-    cgst = cos(gst)
-    sgst = sin(gst)
+    sgst, cgst = sincos(gst)
     return SA[cgst sgst 0; -sgst cgst 0; 0 0 1]
 end
 

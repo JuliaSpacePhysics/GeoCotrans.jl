@@ -1,31 +1,47 @@
 using StaticArrays: Size
-"""
-    CoordinateVector{C, T}
 
-3-element `FieldVector` in a specific coordinate system `C`.
+abstract type AbstractRepresentation end
+struct Cartesian3 <: AbstractRepresentation end
+struct Spherical <: AbstractRepresentation end   # (r, θ, ϕ) or (r, lat, lon)—define explicitly!
+struct Geodetic <: AbstractRepresentation end   # (lat, lon, h) on ellipsoid
+
 """
-struct CoordinateVector{C, T} <: FieldVector{3, T}
+    CoordinateVector{F, T}
+
+3-element `FieldVector` in a specific coordinate frame `F` using representation `R`.
+"""
+struct CoordinateVector{F, R, T, T2} <: FieldVector{3, T}
     x::T
     y::T
     z::T
-    sym::C
+    t::T2
 end
 
-function CoordinateVector{C, T}(x, y, z) where {C, T}
-    CoordinateVector{C, T}(x, y, z, C())
+function CoordinateVector{F, R}(x::T, y::T, z::T, t::T2 = nothing) where {F, R, T, T2}
+    return CoordinateVector{F, R, T, T2}(x, y, z, t)
 end
 
-StaticArrays.similar_type(::Type{CoordinateVector{C, T1}}, ::Type{T2}, S::Size) where {C, T1, T2} =
-    CoordinateVector{C, T2}
+CoordinateVector{F}(x, y, z, t = nothing) where {F} = CoordinateVector{F, Cartesian3}(x, y, z, t)
+CoordinateVector{F, R}(x, y, z, t = nothing) where {F, R} =
+    CoordinateVector{F, R}(promote(x, y, z)..., t)
+CoordinateVector{F, R, T}(x::T, y::T, z::T) where {F, R, T} =
+    CoordinateVector{F, R, T, Nothing}(x, y, z, nothing)
+
+# StaticArrays tries to call that type with 3 arguments (x, y, z)
+# I do not know how to carry time information forward when doing operations like Matrix multiplication
+# So default time to nothing for now :(
+StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1, TT}}, ::Type{T2}, ::Size) where {C, R, T1, TT, T2} =
+    CoordinateVector{C, R, T2}
 
 for sys in (:GDZ, :GEI, :GEO, :GSM, :GSE, :MAG, :SM, :SPH)
     @eval struct $sys <: AbstractCoordinateSystem end
 
     common_doc = "Construct a [`CoordinateVector`](@ref) in `$sys` coordinates."
     method_doc = """    $sys(x, y, z)\n\n$common_doc"""
-    @eval @doc $method_doc $sys(x, y, z) = CoordinateVector(promote(x, y, z)..., $sys())
+    @eval @doc $method_doc $sys(x, y, z) = CoordinateVector{$sys}(x, y, z)
+    @eval $sys(x, y, z, t) = CoordinateVector{$sys}(x, y, z, t)
     method_doc = """    $sys(𝐫)\n\n$common_doc"""
-    @eval @doc $method_doc $sys(𝐫) = (@assert length(𝐫) == 3; CoordinateVector(𝐫[1], 𝐫[2], 𝐫[3], $sys()))
+    @eval @doc $method_doc $sys(𝐫) = (@assert length(𝐫) == 3; CoordinateVector{$sys}(𝐫[1], 𝐫[2], 𝐫[3]))
     @eval export $sys
 end
 
@@ -53,4 +69,4 @@ for sys in (:GEO, :GEI, :GSE, :SM, :SPH, :MAG)
     @eval @doc description($sys) $sys
 end
 
-getcsys(v::CoordinateVector) = v.sym
+getcsys(::CoordinateVector{F}) where {F} = F()

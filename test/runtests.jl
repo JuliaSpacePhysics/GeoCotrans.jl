@@ -4,17 +4,31 @@ using TestItems, TestItemRunner
 # https://github.com/spedas/pyspedas/blob/master/pyspedas/cotrans_tools/tests/cotrans.py
 
 @testitem "CoordinateVector" begin
+    using Dates
+
     𝐫 = GDZ(0, 60, 5)
     @test getcsys(𝐫) == GDZ()
     @test 𝐫 .* 2.0 isa CoordinateVector{GDZ}
+
+    t = Date(2021, 3, 28)
+    𝐫_t = GDZ(0, 60, 5, t)
+    @test getcsys(𝐫_t) == GDZ()
+    @test (𝐫_t .* 2.0).t == nothing
 end
 
 @testitem "gse2gsm" begin
     using Dates
     using DimensionalData
 
-    @test gse2gsm(GSE(1, 2, 3), Date(2021, 1, 1)) isa CoordinateVector{GSM}
-    @test_throws AssertionError gse2gsm(GSM(1, 2, 3), Date(2021, 1, 1))
+    t = Date(2021, 1, 1)
+    gse = GSE(1, 2, 3)
+    gse_t = GSE(1, 2, 3, t)
+    gsm = gse2gsm(gse, t)
+    @test gsm isa CoordinateVector{GSM}
+    @test gsm.t == t
+    @test GSM(gse, t) === gsm
+    @test GSM(gse_t) === gsm
+    @test_throws AssertionError gse2gsm(GSM(1, 2, 3), t)
 
     # Test GSE->GSM transformation
     # Data from Python test case
