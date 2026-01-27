@@ -1,9 +1,6 @@
 using StaticArrays: Size
 
-abstract type AbstractRepresentation end
-struct Cartesian3 <: AbstractRepresentation end
-struct Spherical <: AbstractRepresentation end   # (r, θ, ϕ) or (r, lat, lon)—define explicitly!
-struct Geodetic <: AbstractRepresentation end   # (lat, lon, h) on ellipsoid
+include("FieldModels/FieldModels.jl")
 
 """
     CoordinateVector{F, T}
@@ -33,8 +30,24 @@ CoordinateVector{F, R, T}(x::T, y::T, z::T) where {F, R, T} =
 StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1, TT}}, ::Type{T2}, ::Size) where {C, R, T1, TT, T2} =
     CoordinateVector{C, R, T2}
 
-for sys in (:GDZ, :GEI, :GEO, :GSM, :GSE, :MAG, :SM, :SPH)
-    @eval struct $sys <: AbstractCoordinateSystem end
+export GDZ
+
+"""
+    GDZ(ϕ, λ, h)
+
+Geodetic coordinate system with:
+- ϕ: latitude (north/south) 
+- λ: longitude (east/west) 
+- h: ellipsoidal height [km]
+
+https://www.wikipedia.org/wiki/Geodetic_coordinates
+"""
+GDZ(ϕ, λ, h = 0, t = nothing) = CoordinateVector{GEO, Geodetic}(ϕ, λ, h, t)
+GDZ() = GEO(), Geodetic()
+getcsys(::typeof(GDZ)) = GDZ()
+
+for sys in (:GEI, :GEO, :GSM, :GSE, :MAG, :SM)
+    @eval struct $sys <: AbstractReferenceFrame end
 
     common_doc = "Construct a [`CoordinateVector`](@ref) in `$sys` coordinates."
     method_doc = """    $sys(x, y, z)\n\n$common_doc"""
@@ -45,28 +58,42 @@ for sys in (:GDZ, :GEI, :GEO, :GSM, :GSE, :MAG, :SM, :SPH)
     @eval export $sys
 end
 
-description(::Type{GDZ}) = "Geodetic (GDZ) coordinate system `(altitude [km], latitude [deg], longitude [deg])`."
+const FrameDescriptions = Dict(
+    :GDZ => "Geodetic (GDZ) coordinate system `(altitude [𝐋], latitude [deg], longitude [deg])`.",
+)
+
 description(::Type{GEI}) = "Geocentric Equatorial Inertial (GEI) coordinate system."
+# GEO frame == EarthCenteredEarthFixed (ECEF) frame
 description(::Type{GEO}) = "Geocentric Geographic (cartesian) (GEO) coordinate system `(x [𝐋], y [𝐋], z [𝐋])`."
 description(::Type{GSM}) = "Geocentric Solar Magnetospheric (GSM) coordinate system."
 description(::Type{GSE}) = "Geocentric Solar Ecliptic (GSE) coordinate system."
 description(::Type{MAG}) = "Geomagnetic (MAG) coordinate system."
 description(::Type{SM}) = "Solar Magnetic (SM) coordinate system."
-description(::Type{SPH}) = "Geocentric Geographic (spherical) (SPH) coordinate system `(r [𝐋], θ [deg], φ [deg])`."
+
+getcsys(::CoordinateVector{C, R}) where {C, R} = (C(), R())
+
+# get the reference frame
+frame(::Any) = nothing
+frame(::CoordinateVector{F}) where {F} = F()
+frame(in::AbstractReferenceFrame) = in
+frame(in::Tuple) = frame(in[1])
+# get the coordinate representation
+representation(::Any) = nothing
+representation(in::AbstractRepresentation) = in
+representation(::CoordinateVector{F, R}) where {F, R} = R()
+representation(in::Tuple) = representation(in[2])
 
 @doc """$(description(GSM))
 
 X points sunward from Earth's center. The X-Z plane is defined to contain Earth's dipole axis (positive North).
 """ GSM
 
-@doc """$(description(GDZ))
+@doc """$(FrameDescriptions[:GDZ])
 
 Defined using a reference ellipsoid. Both the altitude and latitude depend on the ellipsoid used.
 GeoCotrans uses the WGS84 reference ellipsoid.
 """ GDZ
 
-for sys in (:GEO, :GEI, :GSE, :SM, :SPH, :MAG)
+for sys in (:GEO, :GEI, :GSE, :SM, :MAG)
     @eval @doc description($sys) $sys
 end
-
-getcsys(::CoordinateVector{F}) where {F} = F()

@@ -1,22 +1,26 @@
 """
 Coordinate systems, transformations, and geomagnetic field models.
 
-## Coordinate systems
+## Reference frames
 
 - [`GEO`](@ref): $(description(GEO))
 - [`GSM`](@ref): $(description(GSM))
 - [`GSE`](@ref): $(description(GSE))
 - [`GEI`](@ref): $(description(GEI))
-- [`GDZ`](@ref): $(description(GDZ))
 - [`MAG`](@ref): $(description(MAG))
-- [`SPH`](@ref): $(description(SPH))
+
+Utility functions for specifying coordinate representaion in GEO reference frames.
+
+- [`GDZ`](@ref): $(FrameDescriptions[:GDZ])
 
 ## Coordinate transformations
 
-- [`geo2gei`](@ref), [`gei2geo`](@ref): Transform between GEO and GEI coordinate systems.
-- [`geo2gsm`](@ref), [`gsm2geo`](@ref): Transform between GEO and GSM coordinate systems.
-- [`gei2gsm`](@ref), [`gsm2gei`](@ref): Transform between GEI and GSM coordinate systems.
-- [`gse2gsm`](@ref), [`gsm2gse`](@ref): Transform between GSE and GSM coordinate systems.
+- [`geo2gei`](@ref), [`gei2geo`](@ref): Transform between GEO and GEI reference frames.
+- [`geo2gsm`](@ref), [`gsm2geo`](@ref): Transform between GEO and GSM reference frames.
+- [`gei2gsm`](@ref), [`gsm2gei`](@ref): Transform between GEI and GSM reference frames.
+- [`gse2gsm`](@ref), [`gsm2gse`](@ref): Transform between GSE and GSM reference frames.
+
+- [`sph2car`](@ref), [`car2sph`](@ref): Transform between spherical and cartesian coordinate representations.
 
 ### References
 
@@ -26,48 +30,48 @@ Coordinate systems, transformations, and geomagnetic field models.
 
 > The International Geomagnetic Reference Field (IGRF) is a standard mathematical description of the Earth's main magnetic field. It is used widely in studies of the Earth's deep interior, crust, ionosphere, and magnetosphere.
 
-### Functions
+### API
 
-- [`igrf`](@ref) / [`igrf_B`](@ref): Compute the geomagnetic field (IGRF-14)
+- [`IGRF`](@ref) / [`igrf`](@ref): Compute the geomagnetic field (IGRF-14)
 
 ### Examples
 
 ```julia
-r, θ, φ = 6500., 30., 4.
-t = Date(2021, 3, 28)
-Br, Bθ, Bφ = igrf_Bd(r, θ, φ, t)
+using GeoCotrans, Dates
+r, θ, φ = 1.0, deg2rad(45), deg2rad(45)
+t = Date(2015)
+Br, Bθ, Bφ = igrf(r, θ, φ, t) # ≈ [-45469, -21942, 2933]
 
 # Input position in geodetic coordinates, output magnetic field in East-North-Up (ENU) coordinates
-Be, Bn, Bu = igrf_B(GDZ(0, 60.39299, 5.32415), t)
+lat, lon = 60, 5
+Be, Bn, Bu = igrf(GDZ(lat, lon), t) # [430, 15184, -48864]
+
+# Input position as a matrix in GSM Cartesian coordinates, output magnetic field as a matrix
+pos = rand(3, 6)
+times = Date.(2015:2020)
+Bgsm = igrf(pos, times; in = GSM())
 ```
 
 ### References
 
 - [IAGA - NOAA/NCEI](https://www.ncei.noaa.gov/products/international-geomagnetic-reference-field)
 - [IGRF-14 Evaluation](https://iaga-vmod.github.io/IGRF14eval/README.html)
-
-### Elsewhere
-
-- [SatelliteToolboxGeomagneticField.jl](https://github.com/JuliaSpace/SatelliteToolboxGeomagneticField.jl): Models to compute the geomagnetic field (IGRF-13, dipole model)
-- [ppigrf](https://github.com/IAGA-VMOD/ppigrf): Pure Python code to calculate IGRF model predictions.
-- [geopack](https://github.com/tsssss/geopack): Python code to calculate IGRF model predictions.
 """
 module GeoCotrans
-using Dictionaries
 using Dates
 using Dates: AbstractTime
 using LinearAlgebra
 using StaticArrays
-using AstroLib: ct2lst, jdcnv, sunpos
-using SpaceDataModel: AbstractCoordinateSystem
+using SpaceDataModel: AbstractReferenceFrame, AbstractRepresentation, Spherical, Cartesian3, Geodetic
 import SpaceDataModel: getcsys
-
+export Spherical, Cartesian3, Geodetic
 export CoordinateVector, getcsys
 
-include("api.jl")
 include("constants.jl")
 include("types.jl")
+include("spherical_harmonics.jl")
 include("igrf.jl")
+include("dipole.jl")
 include("car2sph.jl")
 include("csundir.jl")
 include("cdipdir.jl")
@@ -75,7 +79,14 @@ include("geo2gei.jl")
 include("gei2gsm.jl")
 include("gse2gsm.jl")
 include("gdz2geo.jl")
+include("FieldModels/transform.jl")
 include("workload.jl")
+
+for f in (:car2sph, :car2sphd, :sph2car, :sphd2car)
+    @eval $f(rθφ) = $f(rθφ...)
+    @eval $f(B, rθφ) = $f(B..., rθφ...)
+    @eval export $f
+end
 
 const coord_text = Dict(
     :geo => "Geographic (GEO)",
@@ -108,7 +119,7 @@ for p in coord_pairs
     @eval @doc $doc $func(x, t) = $matfunc(t) * x
     T1, T2 = coord_type.(p)
     @eval function $func(x::CoordinateVector, t)
-        @assert getcsys(x) == $T1()
+        @assert frame(x) == $T1()
         return $T2(($matfunc(t) * x)..., t)
     end
     @eval export $func
@@ -126,6 +137,6 @@ export gdz2sph
 @doc "See also: [`gse2gsm_mat`](@ref)" gse2gsm
 
 pair2func(p) = getfield(GeoCotrans, Symbol(p[1], "2", p[2]))
-const coord_maps = dictionary(p => pair2func(p) for p in coord_pairs)
+const coord_maps = Dict(p => pair2func(p) for p in coord_pairs)
 
 end

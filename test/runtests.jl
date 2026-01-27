@@ -5,14 +5,15 @@ using TestItems, TestItemRunner
 
 @testitem "CoordinateVector" begin
     using Dates
+    using GeoCotrans: getcsys, GDZ, GEO, Geodetic
 
     𝐫 = GDZ(0, 60, 5)
-    @test getcsys(𝐫) == GDZ()
-    @test 𝐫 .* 2.0 isa CoordinateVector{GDZ}
+    @test getcsys(𝐫) == getcsys(GDZ) == (GEO(), Geodetic())
+    @test 𝐫 .* 2.0 isa CoordinateVector{GEO, Geodetic}
 
     t = Date(2021, 3, 28)
     𝐫_t = GDZ(0, 60, 5, t)
-    @test getcsys(𝐫_t) == GDZ()
+    @test getcsys(𝐫_t) == getcsys(GDZ)
     @test (𝐫_t .* 2.0).t == nothing
 end
 
@@ -58,21 +59,34 @@ end
     @test gsm_da[Ti = 1] ≈ expected_gsm rtol = 1.0e-6
 end
 
-@testitem "Validation with AstroLib" begin
+@testitem "Geodetic to Cartesian" begin
+    using GeoCotrans: gdz2car, gdz2sph, car2sph
+    using LinearAlgebra
+    lat, lon, alt = 60, 5, 0
+    𝐫 = gdz2car(lat, lon, alt)
+    @test 𝐫 ≈ [0.4998961951811961, 0.043735250018097305, 0.8633345576875061]
+    @test norm(𝐫) ≈ 1.0 rtol = 1.0e-2
+    @test gdz2sph(lat, lon, alt) ≈ car2sph(𝐫)
+end
+
+
+@testitem "Validation with CoordRefSystems" begin
     using Dates
-    for yr in 2010:2025
-        dt = Date(yr, 1, 1)
-        # test GST
-        @test isapprox(GeoCotrans.calculate_gst(dt), GeoCotrans.calculate_gst_alt(dt), rtol = 5.0e-4)
-        # test csundir
-        @test all(isapprox.(GeoCotrans.csundir_astrolib(dt), GeoCotrans.csundir(dt), rtol = 5.0e-4))
-    end
+    using GeoCotrans: R🜨
+    using CoordRefSystems
+    import CoordRefSystems as CRS
+    using Unitful
 
-    using Chairmarks
-    dt = Date(2021, 3, 28)
+    lat, lon, alt = 60, 5, 0
+    c1 = GeocentricLatLonAlt{WGS84{2139}}(lat, lon, alt)
+    c2 = convert(CRS.Spherical, convert(Cartesian, c1))
 
-    @info @b GeoCotrans.csundir_astrolib($dt)
-    @info @b GeoCotrans.csundir($dt)
+    rθϕ = gdz2sph(lat, lon, alt)
+    @test c2.r ≈ rθϕ[1] * R🜨 * Unitful.km rtol = 1.0e-5
+    @test_broken c2.r ≈ rθϕ[1] * R🜨 * Unitful.km rtol = 1.0e-6
+    @test c2.θ ≈ rθϕ[2] rtol = 1.0e-2 # our implementation is not as accurate
+    @test_broken c2.θ ≈ rθϕ[2] rtol = 1.0e-5
+    @test c2.ϕ ≈ rθϕ[3]
 end
 
 @testitem "Aqua" begin

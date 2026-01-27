@@ -17,14 +17,16 @@ Pkg.add("GeoCotrans")
 ## Coordinate Systems
 
 ```@docs; canonical=false
-GDZ
 GEI
 GEO
 GSM
 GSE
 MAG
 SM
-SPH
+```
+
+```@docs; canonical=false
+GDZ
 ```
 
 ## API Reference
