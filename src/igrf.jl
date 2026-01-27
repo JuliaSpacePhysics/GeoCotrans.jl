@@ -159,7 +159,7 @@ function igrf_B(r, θ, φ, t; max_degree = nothing)
         ar = R🜨 / r
         pow = ar * ar * ar
 
-        for l in 1:max_degree
+        @inbounds for l in 1:max_degree
             k0 = l * (l + 1) ÷ 2 + 1
             Vl = 0.0
             dVl = 0.0
