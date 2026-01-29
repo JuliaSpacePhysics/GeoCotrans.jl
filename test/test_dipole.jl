@@ -57,4 +57,9 @@ end
 
     # Dipole direction should be similar across nearby epochs (5 years)
     @test dipole_dir ≈ dipole_dir2 rtol = 1.0e-2
+
+
+    using Chairmarks
+
+    @test (@b calc_dipole_geo($t)).allocs == 0
 end

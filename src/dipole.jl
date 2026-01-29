@@ -7,8 +7,8 @@ Returns a named tuple: (θ, φ, x0, y0, z0, b0)
 """
 function get_dipole_terms(g, h)
     # Extract coefficients
-    g10, g11, g20, g21, g22 = g[2:6]
-    h11, _, h21, h22 = h[3:6]
+    g10, g11, g20, g21, g22 = g[2], g[3], g[4], g[5], g[6]
+    h11, h21, h22 = h[3], h[5], h[6]
 
     θ, φ, b0 = calc_dipole_angle(g10, g11, h11)
     b02 = b0^2

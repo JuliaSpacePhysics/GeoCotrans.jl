@@ -79,6 +79,15 @@ frame(in::AbstractReferenceFrame) = in
 frame(in::Tuple) = frame(in[1])
 # get the coordinate representation
 representation(::Any) = nothing
+representation(in::Symbol) = if in == :spherical 
+    Spherical() 
+elseif in == :cartesian 
+    Cartesian3()
+elseif in == :geodetic 
+    Geodetic()
+else
+    nothing
+end
 representation(in::AbstractRepresentation) = in
 representation(::CoordinateVector{F, R}) where {F, R} = R()
 representation(in::Tuple) = representation(in[2])
