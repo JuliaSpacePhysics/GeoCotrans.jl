@@ -17,6 +17,12 @@ For more information, see the [Documentation](https://juliaspacephysics.github.i
 
 **Documentation**: [![Dev](https://img.shields.io/badge/docs-dev-blue.svg?logo=julia)](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/)
 
+## Features and Roadmap
+
+- [x] Coordinate transformations between common geocentric systems
+- [x] Interpolation of International Geomagnetic Reference Field (IGRF) field model
+- [ ] World Magnetic Model (High Resolution) (WMM/WMMHR) geomagnetic field model
+
 ## Reference
 
 - [SSC: APPENDIX C: Description of Selected Coordinate Systems Used in SSC Programs](https://sscweb.gsfc.nasa.gov/users_guide/Appendix_C.shtml)

@@ -32,3 +32,29 @@
     @info result result2
 
 end
+
+@testitem "calc_dipole_geo" begin
+    using Dates
+    using LinearAlgebra
+    using GeoCotrans: calc_dipole_geo
+
+    # Test dipole direction calculation
+    t = Date(2015)
+    dipole_dir = calc_dipole_geo(t)
+
+    # Verify it's a unit vector
+    @test norm(dipole_dir) ≈ 1.0
+    # Verify components are reasonable (dipole is tilted ~10-11 degrees from rotation axis)
+    # z-component should be dominant (close to 1) since dipole is nearly aligned with rotation axis
+    @test 0.98 < dipole_dir[3] < 1.0
+    # x and y components should be small
+    @test abs(dipole_dir[1]) < 0.2
+    @test abs(dipole_dir[2]) < 0.2
+
+    # Test temporal consistency
+    dipole_dir2 = calc_dipole_geo(Date(2020))
+    @test norm(dipole_dir2) ≈ 1.0
+
+    # Dipole direction should be similar across nearby epochs (5 years)
+    @test dipole_dir ≈ dipole_dir2 rtol = 1.0e-2
+end
