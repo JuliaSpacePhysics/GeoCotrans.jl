@@ -16,3 +16,13 @@ For more information, see the [Documentation](https://juliaspacephysics.github.i
 **Installation**: at the Julia REPL, run `using Pkg; Pkg.add("GeoCotrans")`
 
 **Documentation**: [![Dev](https://img.shields.io/badge/docs-dev-blue.svg?logo=julia)](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/)
+
+## Reference
+
+- [SSC: APPENDIX C: Description of Selected Coordinate Systems Used in SSC Programs](https://sscweb.gsfc.nasa.gov/users_guide/Appendix_C.shtml)
+
+## Elsewhere
+
+- [SatelliteToolboxGeomagneticField.jl](https://github.com/JuliaSpace/SatelliteToolboxGeomagneticField.jl): Models to compute the geomagnetic field (IGRF-13, dipole model)
+- [ppigrf](https://github.com/IAGA-VMOD/ppigrf): Pure Python code to calculate IGRF model predictions.
+- [geopack](https://github.com/tsssss/geopack): Python code to calculate IGRF model predictions.

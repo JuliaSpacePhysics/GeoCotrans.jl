@@ -1,16 +1,3 @@
-"""
-    calculate_gst(time)
-
-Calculate Greenwich sidereal time (GST) in radians from the given time.
-
-Reference: https://aa.usno.navy.mil/faq/GAST, https://github.com/JuliaAstro/AstroLib.jl/blob/main/src/ct2lst.jl
-"""
-function calculate_gst(time)
-    # ct2lst returns local sidereal time in hours (0-24)
-    # For Greenwich, longitude=0, so GST = LST
-    return ct2lst(0, jdcnv(time)) * 2π / 24
-end
-
 function _calculate_gst_alt(time::DateTime)
     # Extract time components
     iyear = year(time)
@@ -30,12 +17,6 @@ Alternative implementation of Greenwich sidereal time calculation based on the
 reference algorithm from `pyspedas.cotrans_tools.csundir_vect`.
 """
 calculate_gst_alt(time) = _calculate_gst_alt(DateTime(time)) |> first
-
-function csundir_astrolib(time)
-    jd = jdcnv(time)
-    gst = ct2lst(0, jd) * 2π / 24
-    return gst, sunpos(jd; radians = true)...
-end
 
 """
     csundir(time) -> (gst, ra, dec, elong, obliq)
@@ -63,9 +44,7 @@ function csundir(time)
 
     # Inclination of Earth's axis
     obliq = deg2rad(23.45229 - 0.0130125 * t)
-    sob = sin(obliq)
-    cob = cos(obliq)
-
+    sob, cob = sincos(obliq)
     # Aberration due to Earth's motion around the sun (about 0.0056 deg)
     pre = deg2rad(0.005686 - 0.025e-4 * t)
 
@@ -91,10 +70,4 @@ calc_sun_gei(ra, dec) =
 function calc_sun_gei(time)
     _, ra, dec = csundir(time)
     return calc_sun_gei(ra, dec)
-end
-
-
-function sun_dipole()
-
-
 end

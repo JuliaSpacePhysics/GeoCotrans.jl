@@ -5,8 +5,8 @@ const IGRF_degree = 13
 
 coeff_size(degree) = (degree + 1) * (degree + 2) ÷ 2
 
-const igrf_ga = Dict{Int,Vector{Float64}}()
-const igrf_ha = Dict{Int,Vector{Float64}}()
+const igrf_ga = Dict{Int, Vector{Float64}}()
+const igrf_ha = Dict{Int, Vector{Float64}}()
 const igrf_dg = [0.0, 12.6, 10.0, -11.2, -5.3, -8.3, -1.5, -4.4, 0.4, -15.6, -1.7, -2.3, -5.8, 5.4, -6.8, 0.6, 1.3, 0.0, 0.7, 2.3, 1.0, -0.2, -0.3, 0.8, 1.2, -0.8, 0.4, 0.9, -0.1, -0.1, -0.1, 0.5, -0.1, -0.8, -0.8, 0.9, -0.1, 0.2, 0.0, 0.4, -0.1, 0.3, 0.1, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 const igrf_dh = [0.0, 0.0, -21.5, 0.0, -27.3, -11.1, 0.0, 3.8, -0.2, -3.9, 0.0, -1.3, 4.1, 1.6, -4.1, 0.0, -0.5, 2.1, 0.5, 1.7, 1.9, 0.0, 0.3, -1.6, -0.4, 0.8, 0.7, 0.9, 0.0, 0.6, 0.5, -0.7, 0.0, -0.9, 0.5, -0.3, 0.0, -0.3, 0.4, -0.3, 0.4, -0.5, -0.6, 0.3, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 igrf_ga[1965] = [0.0, -30334.0, -2119.0, -1662.0, 2997.0, 1594.0, 1297.0, -2038.0, 1292.0, 856.0, 957.0, 804.0, 479.0, -390.0, 252.0, -219.0, 358.0, 254.0, -31.0, -157.0, -62.0, 45.0, 61.0, 8.0, -228.0, 4.0, 1.0, -111.0, 75.0, -57.0, 4.0, 13.0, -26.0, -6.0, 13.0, 1.0, 13.0, 5.0, -4.0, -14.0, 0.0, 8.0, -1.0, 11.0, 4.0, 8.0, 10.0, 2.0, -13.0, 10.0, -1.0, -1.0, 5.0, 1.0, -2.0, -2.0, -3.0, 2.0, -5.0, -2.0, 4.0, 4.0, 0.0, 2.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -38,22 +38,32 @@ igrf_ha[2025] = [0.0, 0.0, 4545.5, 0.0, -3133.6, -814.2, 0.0, -56.9, 237.6, -549
 igrf_ga[2030] = @. igrf_ga[2025] + 5 * igrf_dg
 igrf_ha[2030] = @. igrf_ha[2025] + 5 * igrf_dh
 
-"""
-Format into matrix form (l, m)
-"""
-function matrix_form(g)
-    M = zeros(IGRF_degree + 1, IGRF_degree + 1)
-    for l in 0:IGRF_degree
-        for m in 0:l
-            M[l+1, m+1] = g[l*(l+1)÷2+m+1]
-        end
-    end
-    return M
-end
-
 const SV = SVector{105}
 
-const igrf_lookup = dictionary(
-    i => (SV(igrf_ga[i]), SV(igrf_ha[i]), SV(igrf_ga[i+5] .- igrf_ga[i]), SV(igrf_ha[i+5] .- igrf_ha[i]))
-    for i in IGRF_min_year:5:IGRF_max_year-5
+const igrf_lookup = Dict(
+    i => (SV(igrf_ga[i]), SV(igrf_ha[i]), SV(igrf_ga[i + 5] .- igrf_ga[i]), SV(igrf_ha[i + 5] .- igrf_ha[i]))
+        for i in IGRF_min_year:5:(IGRF_max_year - 5)
 )
+
+"""
+    get_igrf_coeffs(time)
+
+Get IGRF-14 coefficients for a given time.
+
+Similar to [IRBEM](https://github.com/PRBEM/IRBEM/blob/main/source/igrf_coef.f) implementation,
+but with higher precision (IRBEM uses `year` as the time unit).
+"""
+function get_igrf_coeffs(time)
+    year0, ratio = _get_year0_ratio(time)
+    g0, h0, dg, dh = @inbounds igrf_lookup[year0]
+    g = @~ @. dg * ratio + g0
+    h = @~ @. dh * ratio + h0
+    return LazyArray(g), LazyArray(h)
+end
+
+function get_igrf_coeffs!(g, h, time)
+    year0, ratio = _get_year0_ratio(time)
+    g0, h0, dg, dh = @inbounds igrf_lookup[year0]
+    @. g = dg * ratio + g0
+    return @. h = dh * ratio + h0
+end
