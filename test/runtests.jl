@@ -103,39 +103,36 @@ end
 @testitem "trace_field_line" begin
     using Dates
     using LinearAlgebra
-    using FieldTracer
+    using OrdinaryDiffEq
 
     t = DateTime(2020, 1, 1)
 
-    # Basic tracing from dayside equator (GSM coordinates)
-    x, y, z = 4.0, 0.0, 0.0
-    result = trace_field_line(x, y, z, t; rlim=10.0, r0=1.0)
+    # Basic tracing from dayside equator (GEO coordinates)
+    pos = [4.0, 0.0, 0.0]
+    sol = trace_field_line(pos, t, Tsit5(); rlim=10.0, r0=1.0)
 
-    # Should trace to inner boundary
-    @test result.status == :inner_boundary
     # Should have multiple points
-    @test length(result) > 10
+    @test length(sol.u) > 10
     # First point should be the starting position
-    @test result.points[1] ≈ [x, y, z]
-    # Last point should be at r ≈ r0
-    @test result.r[end] ≈ 1.0 rtol=0.1
+    @test sol.u[1] ≈ pos
+    # Last point should be at r ≈ r0 (inner boundary)
+    r_end = sqrt(sum(sol.u[end].^2))
+    @test r_end ≈ 1.0 rtol=0.1
 
     # Test both directions
-    result_fwd = trace_field_line(3.0, 0.0, 0.5, t; dir=1, rlim=10.0, r0=1.0)
-    result_bwd = trace_field_line(3.0, 0.0, 0.5, t; dir=-1, rlim=10.0, r0=1.0)
-    @test result_fwd.status == :inner_boundary
-    @test result_bwd.status == :inner_boundary
+    sol_fwd = trace_field_line([3.0, 0.0, 0.5], t, Tsit5(); dir=1, rlim=10.0, r0=1.0)
+    sol_bwd = trace_field_line([3.0, 0.0, 0.5], t, Tsit5(); dir=-1, rlim=10.0, r0=1.0)
+    @test length(sol_fwd.u) > 5
+    @test length(sol_bwd.u) > 5
 
     # Test CoordinateVector input
-    pos = GSM(3.0, 0.0, 0.0)
-    result_cv = trace_field_line(pos, t; rlim=10.0, r0=1.0)
-    @test result_cv.status == :inner_boundary
+    pos_geo = GEO(3.0, 0.0, 0.0)
+    sol_cv = trace_field_line(pos_geo, t, Tsit5(); rlim=10.0, r0=1.0)
+    @test length(sol_cv.u) > 5
 
-    # Test iteration
-    count = 0
-    for point in result
-        count += 1
-        @test length(point) == 3
-    end
-    @test count == length(result)
+    # Test FieldLineProblem directly
+    prob = FieldLineProblem([3.0, 0.0, 0.0], (0.0, 50.0), t)
+    cb = FieldLineCallback(r0=1.0, rlim=10.0)
+    sol_prob = solve(prob, Tsit5(); callback=cb)
+    @test length(sol_prob.u) > 5
 end

@@ -133,23 +133,45 @@ end
 
 export gdz2sph
 
-# Field line tracing (requires FieldTracer.jl extension)
+# Field line tracing (requires SciMLBase extension)
 """
-    trace_field_line(x, y, z, t; kwargs...)
-    trace_field_line(pos, t; kwargs...)
+    FieldLineProblem(pos, tspan, t; model=IGRF(), dir=1)
 
-Trace a magnetic field line starting from the given position.
+Create an ODEProblem for tracing a magnetic field line.
 
 !!! note
-    This function requires the `FieldTracer` package to be loaded.
+    This function requires SciMLBase to be loaded:
     ```julia
-    using GeoCotrans, FieldTracer
+    using GeoCotrans, OrdinaryDiffEq  # or any SciML solver package
     ```
+"""
+function FieldLineProblem end
 
-See the extension documentation for full details on arguments and options.
+"""
+    FieldLineCallback(; r0=1.0, rlim=10.0, xlim=20.0, rholim=40.0)
+
+Create a callback for terminating field line integration at boundaries.
+
+!!! note
+    This function requires SciMLBase to be loaded.
+"""
+function FieldLineCallback end
+
+"""
+    trace_field_line(pos, t, solver; kwargs...)
+
+Trace a magnetic field line using the specified SciML solver.
+
+!!! note
+    This function requires SciMLBase to be loaded:
+    ```julia
+    using GeoCotrans, OrdinaryDiffEq
+    sol = trace_field_line([3.0, 0.0, 0.0], t, Tsit5())
+    ```
 """
 function trace_field_line end
-export trace_field_line
+
+export FieldLineProblem, FieldLineCallback, trace_field_line
 
 @doc "See also: [`gse2gsm_mat`](@ref)" gse2gsm
 

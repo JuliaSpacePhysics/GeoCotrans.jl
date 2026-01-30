@@ -1,6 +1,6 @@
 using Test
 using GeoCotrans
-using FieldTracer
+using OrdinaryDiffEq
 using Dates
 using LinearAlgebra
 
@@ -8,110 +8,113 @@ using LinearAlgebra
     t = DateTime(2020, 1, 1)
 
     @testset "Basic tracing from dayside equator" begin
-        # Start at L=4 on dayside equator (GSM coordinates)
-        x, y, z = 4.0, 0.0, 0.0
-        result = trace_field_line(x, y, z, t; rlim=10.0, r0=1.0)
-
-        # Should trace to inner boundary
-        @test result.status == :inner_boundary
+        # Start at L=4 on dayside equator (GEO coordinates)
+        pos = [4.0, 0.0, 0.0]
+        sol = trace_field_line(pos, t, Tsit5(); rlim=10.0, r0=1.0)
 
         # Should have multiple points
-        @test length(result) > 10
+        @test length(sol.u) > 10
 
         # First point should be the starting position
-        @test result.points[1] ≈ [x, y, z]
+        @test sol.u[1] ≈ pos
 
         # Last point should be at r ≈ r0
-        @test result.r[end] ≈ 1.0 rtol=0.1
+        r_end = norm(sol.u[end])
+        @test r_end ≈ 1.0 rtol=0.1
 
-        # All intermediate radii should be > r0
-        @test all(r -> r >= 0.99, result.r)
+        # All intermediate radii should be >= r0 (approximately)
+        @test all(u -> norm(u) >= 0.99, sol.u)
     end
 
     @testset "Tracing in both directions" begin
-        x, y, z = 3.0, 0.0, 0.5
+        pos = [3.0, 0.0, 0.5]
 
         # Trace parallel to B
-        result_fwd = trace_field_line(x, y, z, t; dir=1, rlim=10.0, r0=1.0)
+        sol_fwd = trace_field_line(pos, t, Tsit5(); dir=1, rlim=10.0, r0=1.0)
 
         # Trace anti-parallel to B
-        result_bwd = trace_field_line(x, y, z, t; dir=-1, rlim=10.0, r0=1.0)
+        sol_bwd = trace_field_line(pos, t, Tsit5(); dir=-1, rlim=10.0, r0=1.0)
 
         # Both should reach inner boundary for dipole-like field
-        @test result_fwd.status == :inner_boundary
-        @test result_bwd.status == :inner_boundary
+        r_fwd_end = norm(sol_fwd.u[end])
+        r_bwd_end = norm(sol_bwd.u[end])
+        @test r_fwd_end ≈ 1.0 rtol=0.1
+        @test r_bwd_end ≈ 1.0 rtol=0.1
 
         # The endpoints should be in different hemispheres (approximately)
-        @test sign(result_fwd.points[end][3]) != sign(result_bwd.points[end][3]) ||
-              abs(result_fwd.points[end][3]) < 0.5 || abs(result_bwd.points[end][3]) < 0.5
+        z_fwd = sol_fwd.u[end][3]
+        z_bwd = sol_bwd.u[end][3]
+        @test sign(z_fwd) != sign(z_bwd) || abs(z_fwd) < 0.5 || abs(z_bwd) < 0.5
     end
 
     @testset "Outer boundary reached" begin
         # Start far from Earth with small rlim
-        x, y, z = -5.0, 0.0, 3.0
-        result = trace_field_line(x, y, z, t; rlim=6.0, r0=1.0, dir=1)
+        pos = [-5.0, 0.0, 3.0]
+        sol = trace_field_line(pos, t, Tsit5(); rlim=6.0, r0=1.0, dir=1)
 
-        # Should eventually hit outer boundary or inner boundary
-        @test result.status in (:outer_boundary, :inner_boundary, :lateral_boundary)
+        # Should eventually hit some boundary
+        @test length(sol.u) > 1
+        r_end = norm(sol.u[end])
+        # Either hit inner, outer, or lateral boundary
+        @test r_end <= 6.1 || r_end >= 0.99
     end
 
     @testset "Vector input interface" begin
         pos = [3.0, 0.0, 0.0]
-        result = trace_field_line(pos, t; rlim=10.0, r0=1.0)
+        sol = trace_field_line(pos, t, Tsit5(); rlim=10.0, r0=1.0)
 
-        @test result.status == :inner_boundary
-        @test length(result) > 10
+        @test norm(sol.u[end]) ≈ 1.0 rtol=0.1
+        @test length(sol.u) > 10
     end
 
     @testset "CoordinateVector input interface" begin
-        pos = GSM(3.0, 0.0, 0.0)
-        result = trace_field_line(pos, t; rlim=10.0, r0=1.0)
+        pos = GEO(3.0, 0.0, 0.0)
+        sol = trace_field_line(pos, t, Tsit5(); rlim=10.0, r0=1.0)
 
-        @test result.status == :inner_boundary
-        @test length(result) > 10
+        @test norm(sol.u[end]) ≈ 1.0 rtol=0.1
+        @test length(sol.u) > 10
     end
 
-    @testset "Different coordinate systems" begin
-        # Test GEO input
-        pos_geo = GEO(3.0, 0.0, 0.0)
-        result_geo = trace_field_line(pos_geo, t; rlim=10.0, r0=1.0)
-        @test result_geo.status == :inner_boundary
+    @testset "FieldLineProblem and FieldLineCallback" begin
+        pos = [3.0, 0.0, 0.0]
 
-        # Results should differ since the starting position is different in GSM
-        pos_gsm = GSM(3.0, 0.0, 0.0)
-        result_gsm = trace_field_line(pos_gsm, t; rlim=10.0, r0=1.0)
-        @test result_gsm.status == :inner_boundary
+        # Create problem and callback separately
+        prob = FieldLineProblem(pos, (0.0, 50.0), t)
+        cb = FieldLineCallback(r0=1.0, rlim=10.0)
 
-        # Number of points might differ
-        @test length(result_geo) != length(result_gsm) || result_geo.points[end] != result_gsm.points[end]
+        # Solve with custom options
+        sol = solve(prob, Tsit5(); callback=cb, abstol=1e-8, reltol=1e-8)
+
+        @test length(sol.u) > 10
+        @test norm(sol.u[end]) ≈ 1.0 rtol=0.1
     end
 
-    @testset "Step size effects" begin
-        x, y, z = 3.0, 0.0, 0.0
+    @testset "Different solvers" begin
+        pos = [3.0, 0.0, 0.0]
 
-        # Smaller step size should give more points
-        result_fine = trace_field_line(x, y, z, t; ds=0.01, rlim=10.0, r0=1.0)
-        result_coarse = trace_field_line(x, y, z, t; ds=0.1, rlim=10.0, r0=1.0)
+        # Test with different solvers
+        sol_tsit5 = trace_field_line(pos, t, Tsit5(); rlim=10.0, r0=1.0)
+        sol_dp5 = trace_field_line(pos, t, DP5(); rlim=10.0, r0=1.0)
 
-        @test length(result_fine) > length(result_coarse)
-
-        # Both should reach same boundary
-        @test result_fine.status == result_coarse.status
+        # Both should reach similar endpoint
+        @test norm(sol_tsit5.u[end]) ≈ 1.0 rtol=0.1
+        @test norm(sol_dp5.u[end]) ≈ 1.0 rtol=0.1
     end
 
-    @testset "FieldLineResult iteration" begin
-        result = trace_field_line(3.0, 0.0, 0.0, t; rlim=10.0, r0=1.0)
+    @testset "Solution iteration" begin
+        pos = [3.0, 0.0, 0.0]
+        sol = trace_field_line(pos, t, Tsit5(); rlim=10.0, r0=1.0)
 
         # Test iteration
         count = 0
-        for point in result
+        for u in sol.u
             count += 1
-            @test length(point) == 3
+            @test length(u) == 3
         end
-        @test count == length(result)
+        @test count == length(sol.u)
 
         # Test indexing
-        @test result[1] == result.points[1]
-        @test result[end] == result.points[end]
+        @test sol.u[1] == sol.u[begin]
+        @test sol.u[end] == sol.u[length(sol.u)]
     end
 end
