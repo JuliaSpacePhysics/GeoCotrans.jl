@@ -98,9 +98,3 @@ end
     end
     return SVector{3, T}(Br, Bθ, flag ? Bφ / sinθ : Bφ)
 end
-
-function evaluate_field_cartesian(model, x, y, z)
-    (r, θ, φ) = cartesian_to_spherical(x, y, z)
-    B_sph = evalsph(model, r, θ, φ)
-    return spherical_field_to_cartesian(B_sph..., θ, φ)
-end
