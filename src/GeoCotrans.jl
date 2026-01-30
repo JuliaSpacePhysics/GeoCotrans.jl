@@ -121,6 +121,10 @@ for p in coord_pairs
         @assert frame(x) == $T1()
         return $T2(($matfunc(t) * x)..., t)
     end
+    @eval @inline function $func(A::AbstractMatrix, times::AbstractVector; dims)
+        return stack($func, eachslice(A; dims), times; dims)
+    end
+
     @eval export $func
 
     @eval function $T2(x::CoordinateVector{$T1}, t)

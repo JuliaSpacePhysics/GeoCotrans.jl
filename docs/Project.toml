@@ -1,3 +1,8 @@
 [deps]
-GeoCotrans = "4624b3bc-fe35-44f8-bfa8-722ff9c0e307"
+Chairmarks = "0ca39b1e-fe0b-4e98-acfc-b1656634c4de"
+DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GeoCotrans = "4624b3bc-fe35-44f8-bfa8-722ff9c0e307"
+IRBEM = "d0b46c7b-8a8f-4d20-a1b4-6e9a4a1e4e5f"
+PySPEDAS = "668d2cef-03a7-4c36-a521-7d1c6ddc8846"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
