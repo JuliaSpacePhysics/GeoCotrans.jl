@@ -54,21 +54,15 @@ for sys in (:GEI, :GEO, :GSM, :GSE, :MAG, :SM)
     @eval @doc $method_doc $sys(x, y, z) = CoordinateVector{$sys}(x, y, z)
     @eval $sys(x, y, z, t) = CoordinateVector{$sys}(x, y, z, t)
     method_doc = """    $sys(𝐫)\n\n$common_doc"""
-    @eval @doc $method_doc $sys(𝐫) = (@assert length(𝐫) == 3; CoordinateVector{$sys}(𝐫[1], 𝐫[2], 𝐫[3]))
+    @eval @doc $method_doc $sys(𝐫, t = nothing) = (@assert length(𝐫) == 3; CoordinateVector{$sys}(𝐫[1], 𝐫[2], 𝐫[3], t))
     @eval export $sys
+
+    @eval function $sys(x::CoordinateVector{$sys}, t)
+        return $sys(x[1], x[2], x[3], t)
+    end
 end
 
-const FrameDescriptions = Dict(
-    :GDZ => "Geodetic (GDZ) coordinate system `(altitude [𝐋], latitude [deg], longitude [deg])`.",
-)
-
-description(::Type{GEI}) = "Geocentric Equatorial Inertial (GEI) coordinate system."
-# GEO frame == EarthCenteredEarthFixed (ECEF) frame
-description(::Type{GEO}) = "Geocentric Geographic (cartesian) (GEO) coordinate system `(x [𝐋], y [𝐋], z [𝐋])`."
-description(::Type{GSM}) = "Geocentric Solar Magnetospheric (GSM) coordinate system."
-description(::Type{GSE}) = "Geocentric Solar Ecliptic (GSE) coordinate system."
-description(::Type{MAG}) = "Geomagnetic (MAG) coordinate system."
-description(::Type{SM}) = "Solar Magnetic (SM) coordinate system."
+description(@nospecialize T) = FrameDescriptions[nameof(T)]
 
 getcsys(::CoordinateVector{C, R}) where {C, R} = (C(), R())
 
@@ -79,11 +73,11 @@ frame(in::AbstractReferenceFrame) = in
 frame(in::Tuple) = frame(in[1])
 # get the coordinate representation
 representation(::Any) = nothing
-representation(in::Symbol) = if in == :spherical 
-    Spherical() 
-elseif in == :cartesian 
+representation(in::Symbol) = if in == :spherical
+    Spherical()
+elseif in == :cartesian
     Cartesian3()
-elseif in == :geodetic 
+elseif in == :geodetic
     Geodetic()
 else
     nothing

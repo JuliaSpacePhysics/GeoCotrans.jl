@@ -36,7 +36,9 @@ end
 @testitem "calc_dipole_geo" begin
     using Dates
     using LinearAlgebra
-    using GeoCotrans: calc_dipole_geo
+    using GeoCotrans: calc_dipole_geo, dipole_tilt
+
+    @test dipole_tilt(DateTime(2001, 1, 1, 2, 3, 4)) ≈ -0.533585131 rtol = 1.0e-4
 
     # Test dipole direction calculation
     t = Date(2015)

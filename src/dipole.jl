@@ -57,3 +57,19 @@ function calc_dipole_geo(time)
 end
 
 calc_dipole_gei(time) = geo2gei_mat(time) * calc_dipole_geo(time)
+
+"""
+    dipole_tilt(time)
+
+Compute the dipole tilt angle μ (in radians).
+
+The dipole tilt is the angle between the dipole axis and the GSM Z-axis,
+positive when the north magnetic pole is tilted toward the Sun.
+"""
+function dipole_tilt(time)
+    gst, ra, dec = csundir(time)
+    dipole_gei = geo2gei_mat(gst) * calc_dipole_geo(time)
+    sun_gei = calc_sun_gei(ra, dec)
+    # sin(μ) = dipole · sun
+    return asin(dot(dipole_gei, sun_gei))
+end
