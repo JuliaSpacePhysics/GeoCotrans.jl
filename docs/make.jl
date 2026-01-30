@@ -9,6 +9,7 @@ makedocs(
     modules = [GeoCotrans],
     pages = [
         "Home" => "index.md",
+        "Validation & Comparison" => "coords.md"
     ],
     checkdocs = :exports,
     doctest = true

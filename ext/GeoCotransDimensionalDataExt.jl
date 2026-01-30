@@ -7,8 +7,8 @@ for f in nameof.(values(coord_maps))
     @eval import GeoCotrans: $f
     @eval @inline function $f(A)
         dims = dimnum(A, TimeDim)
-        times = A.dims[dims]
-        data = stack($f, eachslice(parent(A); dims), times; dims)
+        times = A.dims[dims].val
+        data = $f(parent(A), times; dims)
         return rebuild(A, data)
     end
 end

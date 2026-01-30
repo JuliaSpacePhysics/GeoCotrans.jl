@@ -6,8 +6,8 @@ function _calculate_gst_alt(time::DateTime)
     fday = Time(time).instant / Day(1)
     jj = 365 * (iyear - 1900) + floor((iyear - 1901) / 4) + idoy
     dj = jj - 0.5 + fday
-    gst = mod(279.690983 + 0.9856473354 * dj + 360.0 * fday + 180.0, 360.0)
-    return deg2rad(gst), dj
+    gst = deg2rad(279.690983 + 0.9856473354 * dj + 360.0 * fday + 180.0)
+    return mod2pi(gst), dj
 end
 
 """
