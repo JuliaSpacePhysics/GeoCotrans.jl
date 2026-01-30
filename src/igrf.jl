@@ -26,26 +26,26 @@ function igrf_V(r, θ::Tθ, φ::Tφ, t; max_degree = nothing) where {Tθ, Tφ}
     return @no_escape begin
         Plms = @alloc(Tθ, max_degree + 1, max_degree + 1)
         legendre!(Val(:schmidt), Plms, θ, max_degree)
-        sin_mφs = @alloc(Tφ, max_degree + 1)
-        cos_mφs = @alloc(Tφ, max_degree + 1)
-        for m in eachindex(sin_mφs, cos_mφs)
-            sin_mφs[m], cos_mφs[m] = sincos((m - 1) * φ)
-        end
         g = @alloc(Float64, coeff_size(max_degree))
         h = @alloc(Float64, coeff_size(max_degree))
         get_igrf_coeffs!(g, h, t)
+        sincos_mφs = @alloc(Tuple{Tφ, Tφ}, max_degree + 1)
+        for m in eachindex(sincos_mφs)
+            sincos_mφs[m] = sincos((m - 1) * φ)
+        end
         V = 0
-        for l in 1:max_degree
+        @inbounds for l in 1:max_degree
             k0 = l * (l + 1) ÷ 2 + 1
             Vl = 0
             for m in 0:l
                 k = k0 + m
                 Pₗₘ = Plms[l + 1, m + 1]
-                Vl += Pₗₘ * (g[k] * cos_mφs[m + 1] + h[k] * sin_mφs[m + 1])
+                sin_mφ, cos_mφ = sincos_mφs[m + 1]
+                Vl += Pₗₘ * (g[k] * cos_mφ + h[k] * sin_mφ)
             end
             V += (1 / r)^(l + 1) * Vl
         end
-        R🜨 * V
+        V
     end
 end
 
@@ -68,17 +68,6 @@ function igrf_B(r, θ, φ, t; max_degree = nothing)
         evalsph((; g, h), r, θ, φ, max_degree)
     end
 end
-
-# function igrf_B(r, θ, φ, t; kws...)
-#     θ = clamp(θ, 1.0e-8, π - 1.0e-8)  # Avoid division by zero at poles
-#     x = SA[r, θ, φ]
-#     f(x) = igrf_V(x[1], x[2], x[3], t; kws...)
-#     dV = ForwardDiff.gradient(f, x)
-#     Br = -dV[1]
-#     Bθ = -dV[2] / r
-#     Bφ = -dV[3] / (r * sin(θ))
-#     return Br, Bθ, Bφ
-# end
 
 igrf_Bd(r, θ, φ, t; kw...) = igrf_B(r, deg2rad(θ), deg2rad(φ), t; kw...)
 

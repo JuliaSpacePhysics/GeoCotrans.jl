@@ -28,19 +28,20 @@ abstract type CompositeFieldModel <: MagneticFieldModel end
 
 function evalmodel end
 
-function (m::MagneticFieldModel)(𝐫, t = nothing; in = nothing, out = nothing, kw...)
+@inline function (m::MagneticFieldModel)(𝐫, t = nothing; in = nothing, out = nothing, kw...)
     model_csys = getcsys(m)
     in_frame = @something frame(𝐫) frame(in) model_csys[1]
     in_repr = @something representation(𝐫) representation(in) model_csys[2]
-    in = (in_frame, in_repr)
-    out = @something(out, in)
-    return evaluate_model(m, 𝐫, t, in, model_csys, out; kw...)
+    in_csys = (in_frame, in_repr)
+    out_frame = @something frame(out) in_csys[1]
+    out_repr = @something representation(out) in_csys[2]
+    out = (out_frame, out_repr)
+    return evaluate_model(m, 𝐫, t, in_csys, model_csys, out; kw...)
 end
 
 # Static evaluation (3 positional arguments)
-function (m::MagneticFieldModel)(r, θ, φ, t = nothing; kw...)
-    T = Base.promote_eltype(r, θ, φ)
-    return m(SVector{3, T}(r, θ, φ), t; kw...)
+@inline function (m::MagneticFieldModel)(r, θ, φ, t = nothing; kw...)
+    return m(SA[r, θ, φ], t; kw...)
 end
 
 @inline function (m::MagneticFieldModel)(r::AbstractMatrix{T}, times; dim = ndims(r), kw...) where {T}
