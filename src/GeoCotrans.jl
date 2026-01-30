@@ -133,6 +133,24 @@ end
 
 export gdz2sph
 
+# Field line tracing (requires FieldTracer.jl extension)
+"""
+    trace_field_line(x, y, z, t; kwargs...)
+    trace_field_line(pos, t; kwargs...)
+
+Trace a magnetic field line starting from the given position.
+
+!!! note
+    This function requires the `FieldTracer` package to be loaded.
+    ```julia
+    using GeoCotrans, FieldTracer
+    ```
+
+See the extension documentation for full details on arguments and options.
+"""
+function trace_field_line end
+export trace_field_line
+
 @doc "See also: [`gse2gsm_mat`](@ref)" gse2gsm
 
 pair2func(p) = getfield(GeoCotrans, Symbol(p[1], "2", p[2]))

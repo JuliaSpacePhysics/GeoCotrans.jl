@@ -99,3 +99,43 @@ end
     @test_call GeoCotrans.workload()
     @test_opt GeoCotrans.workload()
 end
+
+@testitem "trace_field_line" begin
+    using Dates
+    using LinearAlgebra
+    using FieldTracer
+
+    t = DateTime(2020, 1, 1)
+
+    # Basic tracing from dayside equator (GSM coordinates)
+    x, y, z = 4.0, 0.0, 0.0
+    result = trace_field_line(x, y, z, t; rlim=10.0, r0=1.0)
+
+    # Should trace to inner boundary
+    @test result.status == :inner_boundary
+    # Should have multiple points
+    @test length(result) > 10
+    # First point should be the starting position
+    @test result.points[1] ≈ [x, y, z]
+    # Last point should be at r ≈ r0
+    @test result.r[end] ≈ 1.0 rtol=0.1
+
+    # Test both directions
+    result_fwd = trace_field_line(3.0, 0.0, 0.5, t; dir=1, rlim=10.0, r0=1.0)
+    result_bwd = trace_field_line(3.0, 0.0, 0.5, t; dir=-1, rlim=10.0, r0=1.0)
+    @test result_fwd.status == :inner_boundary
+    @test result_bwd.status == :inner_boundary
+
+    # Test CoordinateVector input
+    pos = GSM(3.0, 0.0, 0.0)
+    result_cv = trace_field_line(pos, t; rlim=10.0, r0=1.0)
+    @test result_cv.status == :inner_boundary
+
+    # Test iteration
+    count = 0
+    for point in result
+        count += 1
+        @test length(point) == 3
+    end
+    @test count == length(result)
+end
