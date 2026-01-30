@@ -9,6 +9,7 @@ makedocs(
     modules = [GeoCotrans],
     pages = [
         "Home" => "index.md",
+        "Field Line Tracing" => "field_line_tracing.md",
     ],
     checkdocs = :exports,
     doctest = true
