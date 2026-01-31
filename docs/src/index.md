@@ -14,6 +14,18 @@ using Pkg
 Pkg.add("GeoCotrans")
 ```
 
+## Usage
+
+Magnetic Local Time (MLT) calculation
+
+```@repl
+using GeoCotrans, Dates
+
+xGEO = [1., 2., 3.];
+time = Date(2020);
+get_mlt(xGEO, time)
+```
+
 ## Coordinate Systems
 
 ```@docs; canonical=false

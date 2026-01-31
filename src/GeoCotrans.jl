@@ -77,6 +77,7 @@ using SpaceDataModel: AbstractReferenceFrame, AbstractRepresentation, Spherical,
 import SpaceDataModel: getcsys
 export Spherical, Cartesian3, Geodetic
 export CoordinateVector, getcsys
+export get_mlt
 
 include("info.jl")
 include("constants.jl")
@@ -137,8 +138,10 @@ sm2geo_mat(t) = transpose(geo2sm_mat(t))
 gei2mag_mat(t) = geo2mag_mat(t) * gei2geo_mat(t)
 mag2gei_mat(t) = transpose(gei2mag_mat(t))
 
-sm2mag_mat(t) = mag2gei_mat(t) * sm2gei_mat(t)
+sm2mag_mat(t) = gei2mag_mat(t) * sm2gei_mat(t)
 mag2sm_mat(t) = transpose(sm2mag_mat(t))
+
+include("mlt.jl")
 
 coord_type(s::Symbol) = Symbol(uppercase(string(s)))
 for p in coord_pairs
