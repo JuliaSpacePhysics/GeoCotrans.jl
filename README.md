@@ -26,6 +26,7 @@ For more information, see the [Documentation](https://juliaspacephysics.github.i
 ## Reference
 
 - [SSC: APPENDIX C: Description of Selected Coordinate Systems Used in SSC Programs](https://sscweb.gsfc.nasa.gov/users_guide/Appendix_C.shtml)
+- [Coordinate transformations between geocentric systems](https://www.mssl.ucl.ac.uk/grid/iau/extra/local_copy/SP_coords/geo_tran.htm)
 
 ## Elsewhere
 

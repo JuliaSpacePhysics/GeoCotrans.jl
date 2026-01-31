@@ -1,7 +1,8 @@
 using TestItems, TestItemRunner
 @run_package_tests
 
-# https://github.com/spedas/pyspedas/blob/master/pyspedas/cotrans_tools/tests/cotrans.py
+# https://github.com/spedas/pyspedas/blob/master/pyspedas/cotrans_tools/tests/test_cotrans.py
+# https://github.com/tsssss/geopack/blob/master/geopack/test_geopack1.py
 
 @testitem "CoordinateVector" begin
     using Dates
@@ -87,6 +88,65 @@ end
     @test c2.θ ≈ rθϕ[2] rtol = 1.0e-2 # our implementation is not as accurate
     @test_broken c2.θ ≈ rθϕ[2] rtol = 1.0e-5
     @test c2.ϕ ≈ rθϕ[3]
+end
+
+@testitem "geo2mag" begin
+    using Dates
+    using GeoCotrans: geo2mag_mat, calc_dipole_geo, calc_dipole_angle, get_igrf_coeffs
+
+    t = DateTime(2001, 1, 1, 2, 3, 4)
+
+    # Test that dipole direction in MAG is along Z-axis
+    dipole_geo = calc_dipole_geo(t)
+    dipole_mag = geo2mag_mat(t) * dipole_geo
+    @test dipole_mag ≈ [0, 0, 1]
+
+    # Test CoordinateVector transformation
+    geo = GEO(2.8011944117533565, -2.4048913761357267, 4.5066403602406275)
+    geo_t = GEO(geo, t)
+    mag = geo2mag(geo, t)
+    r_mag = [2.298686529948157, 1.8997853069109853, 5.004683409035982]
+    @test mag ≈ r_mag
+    @test MAG(geo, t) === MAG(geo_t) === mag
+    @test GEO(MAG(geo_t)) ≈ geo_t
+end
+
+@testitem "gsm2sm" begin
+    using Dates
+    using GeoCotrans: gsm2sm_mat, sm2gsm_mat, dipole_tilt, gei2gsm_mat, calc_dipole_gei
+
+    t = DateTime(2001, 1, 1, 2, 3, 4)
+    M = gsm2sm_mat(t)
+    # Test that dipole in GSM transforms to Z-axis in SM
+    dipole_gsm = gei2gsm_mat(t) * calc_dipole_gei(t)
+    dipole_sm = M * dipole_gsm
+    @test dipole_sm ≈ [0, 0, 1]
+    # Verify dipole tilt angle is consistent with dipole in GSM
+    μ = dipole_tilt(t)
+    @test dipole_gsm ≈ [sin(μ), 0, cos(μ)]
+
+    # Test CoordinateVector transformation
+    gsm = GSM(-5.1, 0.3, 2.8)
+    gsm_t = GSM(gsm, t)
+    sm = gsm2sm(gsm, t)
+    sm_geopack_true = SM(-2.9670092644479498, 0.3, 5.004683409035982, t)
+    @test sm ≈ sm_geopack_true rtol = 1.0e-7
+    @test SM(gsm_t) === SM(gsm, t) === gsm2sm(gsm, t)
+    # Test roundtrip transformation
+    @test GSM(SM(gsm_t)) ≈ gsm_t
+end
+
+# The most expensive transformation
+@testitem "mag2sm" begin
+    using GeoCotrans: mag2sm
+    using Chairmarks
+    using Dates
+
+    t = DateTime(2001, 1, 1, 2, 3, 4)
+    mag = MAG(1.0, 2.0, 3.0, t)
+    sm = mag2sm(mag, t)
+
+    @info @b mag2sm($mag, $t)
 end
 
 @testitem "Aqua" begin
