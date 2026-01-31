@@ -3,11 +3,6 @@
 
 Compute the GEO to MAG transformation matrix.
 
-MAG (Geomagnetic) coordinate system:
-- Z-axis: parallel to Earth's magnetic dipole axis (positive northward)
-- Y-axis: perpendicular to the plane containing the dipole and Earth's rotation axis
-- X-axis: completes the right-handed system (in the dipole-geographic pole plane)
-
 This follows Hapgood (1992) / UCL `geo_tran` convention:
 
 `T5 = <lat-90, Y> * <long, Z>`

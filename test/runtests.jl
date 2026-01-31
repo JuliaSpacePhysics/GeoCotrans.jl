@@ -1,12 +1,30 @@
+using Test
 using TestItems, TestItemRunner
 @run_package_tests
 
 # https://github.com/spedas/pyspedas/blob/master/pyspedas/cotrans_tools/tests/test_cotrans.py
 # https://github.com/tsssss/geopack/blob/master/geopack/test_geopack1.py
 
+const RUN_JET_TESTS = isempty(VERSION.prerelease)
+
+if RUN_JET_TESTS
+    using Pkg; Pkg.add("JET"); Pkg.instantiate()
+    @testitem "JET static analysis" begin
+        using JET
+        @test_call GeoCotrans.workload()
+        @test_opt GeoCotrans.workload()
+    end
+end
+
+@testitem "Frames and Representations" begin
+    using GeoCotrans: getcsys, representation
+    # Default coordinate representation is Cartesian3
+    @test representation(GEO()) == Cartesian3()
+end
+
 @testitem "CoordinateVector" begin
     using Dates
-    using GeoCotrans: getcsys, GDZ, GEO, Geodetic
+    using GeoCotrans: getcsys, GDZ, GEO, Geodetic, representation
 
     𝐫 = GDZ(0, 60, 5)
     @test getcsys(𝐫) == getcsys(GDZ) == (GEO(), Geodetic())
@@ -16,6 +34,7 @@ using TestItems, TestItemRunner
     𝐫_t = GDZ(0, 60, 5, t)
     @test getcsys(𝐫_t) == getcsys(GDZ)
     @test (𝐫_t .* 2.0).t == nothing
+    @test representation(𝐫) == Geodetic()
 end
 
 @testitem "gse2gsm" begin
@@ -164,10 +183,4 @@ end
 @testitem "Aqua" begin
     using Aqua
     Aqua.test_all(GeoCotrans)
-end
-
-@testitem "JET" begin
-    using JET
-    @test_call GeoCotrans.workload()
-    @test_opt GeoCotrans.workload()
 end

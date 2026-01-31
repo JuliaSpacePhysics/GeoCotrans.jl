@@ -30,35 +30,29 @@ CoordinateVector{F, R, T}(x::T, y::T, z::T) where {F, R, T} =
 StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1, TT}}, ::Type{T2}, ::Size) where {C, R, T1, TT, T2} =
     CoordinateVector{C, R, T2}
 
-export GDZ
-
-"""
-    GDZ(ϕ, λ, h)
-
-Geodetic coordinate system with:
-- ϕ: latitude (north/south) 
-- λ: longitude (east/west) 
-- h: ellipsoidal height [km]
-
-https://www.wikipedia.org/wiki/Geodetic_coordinates
-"""
-GDZ(ϕ, λ, h = 0, t = nothing) = CoordinateVector{GEO, Geodetic}(ϕ, λ, h, t)
-GDZ() = GEO(), Geodetic()
-getcsys(::typeof(GDZ)) = GDZ()
-
 for sys in (:GEI, :GEO, :GSM, :GSE, :MAG, :SM)
-    @eval struct $sys <: AbstractReferenceFrame end
+    doc = """$(FrameDescriptions[sys])
 
-    common_doc = "Construct a [`CoordinateVector`](@ref) in `$sys` coordinates."
-    method_doc = """    $sys(x, y, z)\n\n$common_doc"""
-    @eval @doc $method_doc $sys(x, y, z) = CoordinateVector{$sys}(x, y, z)
-    @eval $sys(x, y, z, t) = CoordinateVector{$sys}(x, y, z, t)
-    method_doc = """    $sys(𝐫)\n\n$common_doc"""
-    @eval @doc $method_doc $sys(𝐫, t = nothing) = (@assert length(𝐫) == 3; CoordinateVector{$sys}(𝐫[1], 𝐫[2], 𝐫[3], t))
-    @eval export $sys
+    $(get(FrameDefinitions, sys, ""))
 
-    @eval function $sys(x::CoordinateVector{$sys}, t)
-        return $sys(x[1], x[2], x[3], t)
+    To Construct a [`CoordinateVector`](@ref) in `$sys` reference frame with cartesian representation.
+
+        $sys(x, y, z, t = nothing)
+        $sys(𝐫, t = nothing)
+    """
+
+    @eval begin
+        struct $sys <: AbstractReferenceFrame end
+        @doc $doc $sys
+        $sys(x, y, z, t = nothing) = CoordinateVector{$sys}(x, y, z, t)
+        function $sys(𝐫, t = nothing)
+            @assert length(𝐫) == 3
+            # check when frame is specified
+            f = frame(𝐫)
+            !isnothing(f) && @assert f isa $sys
+            return CoordinateVector{$sys}(𝐫[1], 𝐫[2], 𝐫[3], t)
+        end
+        export $sys
     end
 end
 
@@ -82,21 +76,7 @@ elseif in == :geodetic
 else
     nothing
 end
+representation(::AbstractReferenceFrame) = Cartesian3()
 representation(in::AbstractRepresentation) = in
 representation(::CoordinateVector{F, R}) where {F, R} = R()
 representation(in::Tuple) = representation(in[2])
-
-@doc """$(description(GSM))
-
-X points sunward from Earth's center. The X-Z plane is defined to contain Earth's dipole axis (positive North).
-""" GSM
-
-@doc """$(FrameDescriptions[:GDZ])
-
-Defined using a reference ellipsoid. Both the altitude and latitude depend on the ellipsoid used.
-GeoCotrans uses the WGS84 reference ellipsoid.
-""" GDZ
-
-for sys in (:GEO, :GEI, :GSE, :SM, :MAG)
-    @eval @doc description($sys) $sys
-end
