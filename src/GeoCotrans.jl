@@ -12,7 +12,7 @@ Coordinate systems, transformations, and geomagnetic field models.
 
 Utility functions for specifying coordinate representaion in GEO reference frames.
 
-- [`GDZ`](@ref): $(FrameDescriptions[:GDZ])
+- [`GDZ`](@ref): $GDZ_DESC
 
 ## Coordinate transformations
 
@@ -75,13 +75,14 @@ using LinearAlgebra
 using StaticArrays
 using SpaceDataModel: AbstractReferenceFrame, AbstractRepresentation, Spherical, Cartesian3, Geodetic
 import SpaceDataModel: getcsys
-export Spherical, Cartesian3, Geodetic
+export Spherical, Cartesian3, Geodetic, GDZ
 export CoordinateVector, getcsys
 export get_mlt
 
 include("info.jl")
 include("constants.jl")
 include("types.jl")
+include("gdz.jl")
 include("spherical_harmonics.jl")
 include("igrf.jl")
 include("dipole.jl")
@@ -146,13 +147,15 @@ include("mlt.jl")
 coord_type(s::Symbol) = Symbol(uppercase(string(s)))
 for p in coord_pairs
     func = Symbol(p[1], "2", p[2])
+    matfunc = Symbol(func, :_mat)
+
     doc = """$(func)(x, t)
 
-    Transforms `x` vector from $(coord_text[p[1]]) to $(coord_text[p[2]]) coordinates at time `t`.
+    Transforms coordinate(s) `x` from $(coord_text[p[1]]) to $(coord_text[p[2]]) reference frame at time(s) `t`.
     """
+    @eval @doc $doc $func
 
-    matfunc = Symbol(func, :_mat)
-    @eval @doc $doc $func(x, t) = $matfunc(t) * x
+    @eval $func(x, t) = $matfunc(t) * x
     T1, T2 = coord_type.(p)
     @eval function $func(x::CoordinateVector, t)
         @assert frame(x) == $T1()
@@ -163,13 +166,10 @@ for p in coord_pairs
     end
     @eval export $func
 
-    @eval $T2(x::CoordinateVector{$T1}, t) = $func(x, t)
-    @eval $T2(x::CoordinateVector{$T1}) = $func(x, x.t)
+    @eval $T2(x::CoordinateVector{$T1}, t = nothing) = $func(x, @something(t, x.t))
 end
 
 export gdz2sph
-
-@doc "See also: [`gse2gsm_mat`](@ref)" gse2gsm
 
 pair2func(p) = getfield(GeoCotrans, Symbol(p[1], "2", p[2]))
 const coord_maps = Dict(p => pair2func(p) for p in coord_pairs)
