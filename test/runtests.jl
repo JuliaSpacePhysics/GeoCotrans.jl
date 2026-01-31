@@ -111,6 +111,18 @@ end
     @test GEO(MAG(geo_t)) ≈ geo_t
 end
 
+@testitem "mlt" begin
+    using Dates
+    using GeoCotrans: get_mlt
+    using Chairmarks
+
+    r = [2.195517156287977, 2.834061428571752, 0.34759070278576953]
+    t = DateTime("2015-02-02T06:12:43")
+    IRBEM_MLT = 9.56999052595853
+    @test get_mlt(r, t) ≈ IRBEM_MLT rtol = 1.0e-4
+    @info @b get_mlt($r, $t)
+end
+
 @testitem "gsm2sm" begin
     using Dates
     using GeoCotrans: gsm2sm_mat, sm2gsm_mat, dipole_tilt, gei2gsm_mat, calc_dipole_gei

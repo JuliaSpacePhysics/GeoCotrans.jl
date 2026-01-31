@@ -39,7 +39,7 @@ function csundir(time)
     # Longitude along ecliptic
     vl = mod(279.696678 + 0.9856473354 * dj, 360.0)
     t = dj / 36525.0
-    g = deg2rad(mod(358.475845 + 0.985600267 * dj, 360.0))
+    g = deg2rad(358.475845 + 0.985600267 * dj) |> mod2pi
     elong = deg2rad(vl + (1.91946 - 0.004789 * t) * sin(g) + 0.020094 * sin(2.0 * g))
 
     # Inclination of Earth's axis
@@ -50,11 +50,12 @@ function csundir(time)
 
     # Declination of the sun
     slp = elong - pre
-    sind = sob * sin(slp)
+    sinslp, cosslp = sincos(slp)
+    sind = sob * sinslp
     cosd = sqrt(1.0 - sind^2)
     sc = sind / cosd
     dec = atan(sc)
-    ra = π - atan((cob / sob) * sc, -cos(slp) / cosd)
+    ra = π - atan((cob / sob) * sc, -cosslp / cosd)
 
     return gst, ra, dec, elong, obliq
 end
