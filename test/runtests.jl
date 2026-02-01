@@ -77,6 +77,10 @@ end
     # Check that the transformation worked correctly
     expected_gsm = [775.0, 11.70357713, -7.93890939]
     @test gsm_da[Ti = 1] ≈ expected_gsm rtol = 1.0e-6
+
+    @testset "model evaluation for DimArray" begin
+        @test_nowarn igrf(gsm_da; in = (GSM(), Cartesian3()), scale = 1 / 6371.2)
+    end
 end
 
 @testitem "Geodetic to Cartesian" begin
