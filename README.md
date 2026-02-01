@@ -33,3 +33,4 @@ For more information, see the [Documentation](https://juliaspacephysics.github.i
 - [SatelliteToolboxGeomagneticField.jl](https://github.com/JuliaSpace/SatelliteToolboxGeomagneticField.jl): Models to compute the geomagnetic field (IGRF-13, dipole model)
 - [ppigrf](https://github.com/IAGA-VMOD/ppigrf): Pure Python code to calculate IGRF model predictions.
 - [geopack](https://github.com/tsssss/geopack): Python code to calculate IGRF model predictions.
+- [pymaginverse](https://github.com/outfrenk/pymaginverse): numerical inversion of geomagnetic field data.

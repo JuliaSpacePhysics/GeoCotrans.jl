@@ -86,9 +86,12 @@ function igrf_Benu(𝐫, t)
 end
 
 """
-    IGRF(; in = (GEO(), Spherical()))
+    IGRF(;)
 
-Create an IGRF magnetic field model.    
+Load the International Geomagnetic Reference Field (IGRF) model.
+
+IGRF is a time-varying model of Earth's main magnetic field with coefficients at 5-year epochs from 1965 to 2030, linearly interpolated between epochs.
+
 By default the input coordinate system `in` is `(GEO(), Spherical())`.
 
 # Examples
