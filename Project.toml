@@ -18,14 +18,17 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [weakdeps]
 DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [extensions]
 GeoCotransDimensionalDataExt = "DimensionalData"
+GeoCotransSciMLExt = "SciMLBase"
 
 [compat]
 Bumper = "0.7"
 Dates = "1"
 DimensionalData = "0.29"
+SciMLBase = "2"
 LazyArrays = "2"
 LinearAlgebra = "1"
 PrecompileTools = "1"

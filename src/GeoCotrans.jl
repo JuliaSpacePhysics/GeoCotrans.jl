@@ -171,6 +171,46 @@ end
 
 export gdz2sph
 
+# Field line tracing (requires SciMLBase extension)
+"""
+    FieldLineProblem(pos, tspan, t; model=IGRF(), dir=1)
+
+Create an ODEProblem for tracing a magnetic field line.
+
+!!! note
+    This function requires SciMLBase to be loaded:
+    ```julia
+    using GeoCotrans, OrdinaryDiffEq  # or any SciML solver package
+    ```
+"""
+function FieldLineProblem end
+
+"""
+    FieldLineCallback(; r0=1.0, rlim=10.0, xlim=20.0, rholim=40.0)
+
+Create a callback for terminating field line integration at boundaries.
+
+!!! note
+    This function requires SciMLBase to be loaded.
+"""
+function FieldLineCallback end
+
+"""
+    trace_field_line(pos, t, solver; kwargs...)
+
+Trace a magnetic field line using the specified SciML solver.
+
+!!! note
+    This function requires SciMLBase to be loaded:
+    ```julia
+    using GeoCotrans, OrdinaryDiffEq
+    sol = trace_field_line([3.0, 0.0, 0.0], t, Tsit5())
+    ```
+"""
+function trace_field_line end
+
+export FieldLineProblem, FieldLineCallback, trace_field_line
+
 pair2func(p) = getfield(GeoCotrans, Symbol(p[1], "2", p[2]))
 const coord_maps = Dict(p => pair2func(p) for p in coord_pairs)
 

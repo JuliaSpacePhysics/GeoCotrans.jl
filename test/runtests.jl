@@ -188,3 +188,40 @@ end
     using Aqua
     Aqua.test_all(GeoCotrans)
 end
+
+@testitem "trace_field_line" begin
+    using Dates
+    using LinearAlgebra
+    using OrdinaryDiffEq
+
+    t = DateTime(2020, 1, 1)
+
+    # Basic tracing from dayside equator (GEO coordinates)
+    pos = [4.0, 0.0, 0.0]
+    sol = trace_field_line(pos, t, Tsit5(); rlim=10.0, r0=1.0)
+
+    # Should have multiple points
+    @test length(sol.u) > 10
+    # First point should be the starting position
+    @test sol.u[1] ≈ pos
+    # Last point should be at r ≈ r0 (inner boundary)
+    r_end = sqrt(sum(sol.u[end].^2))
+    @test r_end ≈ 1.0 rtol=0.1
+
+    # Test both directions
+    sol_fwd = trace_field_line([3.0, 0.0, 0.5], t, Tsit5(); dir=1, rlim=10.0, r0=1.0)
+    sol_bwd = trace_field_line([3.0, 0.0, 0.5], t, Tsit5(); dir=-1, rlim=10.0, r0=1.0)
+    @test length(sol_fwd.u) > 5
+    @test length(sol_bwd.u) > 5
+
+    # Test CoordinateVector input
+    pos_geo = GEO(3.0, 0.0, 0.0)
+    sol_cv = trace_field_line(pos_geo, t, Tsit5(); rlim=10.0, r0=1.0)
+    @test length(sol_cv.u) > 5
+
+    # Test FieldLineProblem directly
+    prob = FieldLineProblem([3.0, 0.0, 0.0], (0.0, 50.0), t)
+    cb = FieldLineCallback(r0=1.0, rlim=10.0)
+    sol_prob = solve(prob, Tsit5(); callback=cb)
+    @test length(sol_prob.u) > 5
+end
