@@ -1,5 +1,5 @@
 """
-Coordinate systems, transformations, and geomagnetic field models.
+Coordinate systems, transformations, geomagnetic field models, and field line tracing.
 
 ## Reference frames
 
@@ -174,7 +174,7 @@ export gdz2sph
 
 pair2func(p) = getfield(GeoCotrans, Symbol(p[1], "2", p[2]))
 const coord_maps = Dict(p => pair2func(p) for p in coord_pairs)
-include("trace.jl")
+include("trace.jl"); using .FieldLineTracing
 include("workload.jl")
 
 end

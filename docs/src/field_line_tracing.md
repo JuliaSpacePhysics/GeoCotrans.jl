@@ -1,6 +1,8 @@
 # Field Line Tracing
 
-GeoCotrans.jl provides functionality to trace magnetic field lines using the IGRF model. This feature requires loading a SciML solver package (like OrdinaryDiffEqTsit5.jl).
+```@docs; canonical=false
+GeoCotrans.FieldLineTracing
+```
 
 ## Basic Usage
 

@@ -46,7 +46,7 @@ GDZ
 ### Public
 
 ```@autodocs
-Modules = [GeoCotrans]
+Modules = [GeoCotrans, GeoCotrans.FieldLineTracing]
 Private = false
 ```
 
