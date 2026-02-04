@@ -7,6 +7,10 @@
 GeoCotrans
 ```
 
+```@docs; canonical=false
+GeoCotrans.FieldLineTracing
+```
+
 ## Installation
 
 ```julia

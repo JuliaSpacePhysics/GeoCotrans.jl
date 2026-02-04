@@ -1,5 +1,5 @@
 """
-Coordinate systems, transformations, geomagnetic field models, and field line tracing.
+Coordinate systems, transformations, geomagnetic field models, and [field line tracing](@ref FieldLineTracing).
 
 ## Reference frames
 

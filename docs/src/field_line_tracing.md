@@ -6,7 +6,7 @@ GeoCotrans.FieldLineTracing
 
 ## Basic Usage
 
-```julia
+```@example trace
 using GeoCotrans, OrdinaryDiffEqTsit5, Dates
 
 # Define time for field evaluation
@@ -16,19 +16,11 @@ t = DateTime(2020, 1, 1)
 sol = trace(GEO(3.0, 0.0, 0.0), t, Tsit5())
 ```
 
-## API Reference
-
-```@docs; canonical=false
-FieldLineProblem
-FieldLineCallback
-trace
-```
-
 ## Plotting with Makie
 
 Here's a complete example showing how to trace and visualize magnetic field lines using GLMakie:
 
-```julia
+```@example trace
 using GeoCotrans, OrdinaryDiffEqTsit5, Dates
 using CairoMakie
 
@@ -75,7 +67,7 @@ fig
 
 ## 2D Visualization
 
-```julia
+```@example trace
 using GeoCotrans, OrdinaryDiffEqTsit5, Dates
 using CairoMakie
 
@@ -127,4 +119,12 @@ end
 limits!(ax2, -7, 7, -7, 7)
 
 fig
+```
+
+## API Reference
+
+```@docs; canonical=false
+FieldLineProblem
+FieldLineCallback
+trace
 ```
