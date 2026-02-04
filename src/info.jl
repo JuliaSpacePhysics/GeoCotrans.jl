@@ -1,3 +1,12 @@
+const coord_text = Dict(
+    :geo => "Geographic (GEO)",
+    :gei => "Geocentric Equatorial Inertial (GEI)",
+    :gse => "Geocentric Solar Ecliptic (GSE)",
+    :gsm => "Geocentric Solar Magnetospheric (GSM)",
+    :mag => "Geomagnetic (MAG)",
+    :sm => "Solar Magnetic (SM)"
+)
+
 const FrameDescriptions = Dict(
     :GEI => "Geocentric Equatorial Inertial (GEI) reference frame.",
     :GEO => "Geocentric Geographic (GEO) reference frame.",

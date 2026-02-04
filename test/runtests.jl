@@ -172,7 +172,7 @@ end
 end
 
 # The most expensive transformation
-@testitem "mag2sm" begin
+@testitem "mag2sm and mag2gei" begin
     using GeoCotrans: mag2sm
     using Chairmarks
     using Dates
@@ -182,6 +182,17 @@ end
     sm = mag2sm(mag, t)
 
     @info @b mag2sm($mag, $t)
+    @test MAG(SM(mag)) ≈ mag
+    @test MAG(GEI(mag)) ≈ mag
+end
+
+@testitem "geo2sm" begin
+    using Dates
+
+    t = DateTime(2001, 1, 1, 2, 3, 4)
+    geo = GEO(1.0, 2.0, 3.0, t)
+    @test SM(geo) ≈ SM(GEI(geo))
+    @test GEO(SM(geo)) ≈ geo
 end
 
 @testitem "Aqua" begin
