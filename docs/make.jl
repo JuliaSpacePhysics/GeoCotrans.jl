@@ -1,15 +1,16 @@
 using Documenter
 using GeoCotrans
 
-DocMeta.setdocmeta!(GeoCotrans, :DocTestSetup, :(using GeoCotrans); recursive = true)
+DocMeta.setdocmeta!(GeoCotrans, :DocTestSetup, :(using GeoCotrans; using GeoCotrans.FieldLineTracing); recursive = true)
 
 makedocs(
     sitename = "GeoCotrans.jl",
     format = Documenter.HTML(),
-    modules = [GeoCotrans],
+    modules = [GeoCotrans, GeoCotrans.FieldLineTracing],
     pages = [
         "Home" => "index.md",
-        "Validation & Comparison" => "coords.md"
+        "Validation & Comparison" => "coords.md",
+        "Field Line Tracing" => "field_line_tracing.md"
     ],
     checkdocs = :exports,
     doctest = true

@@ -1,4 +1,16 @@
-# Field line tracing (requires SciMLBase extension)
+"""
+GeoCotrans.jl provides functionality to trace magnetic field lines.
+
+This feature is provided via a package extension and requires an ODE solver package to be loaded in the active environment. For example, load `OrdinaryDiffEqTsit5` (or another SciML ODE solver) before calling `trace`.
+
+## API
+
+- [`trace`](@ref), [`FieldLineProblem`](@ref), [`FieldLineCallback`](@ref)
+"""
+module FieldLineTracing
+
+export FieldLineProblem, FieldLineCallback, trace
+
 """
     FieldLineProblem(pos, tspan, t; model=IGRF(), dir=1)
 
@@ -40,6 +52,7 @@ Trace a magnetic field line using the specified SciML solver.
 - `r0 = 1.0`: Inner radial boundary (Earth radii)
 - `rlim = 10.0`: Outer radial boundary (Earth radii)
 - `maxs = 100.0`: Maximum arc length for integration
+- `in = getcsys(pos)`: Input coordinate system (Reference frame and coordinate representation)
 - Additional keyword arguments are passed to `solve()`
 
 # Example
@@ -49,3 +62,4 @@ sol = trace([3.0, 0.0, 0.0], t, Tsit5())
 ```
 """
 function trace end
+end
