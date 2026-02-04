@@ -78,6 +78,7 @@ import SpaceDataModel: getcsys
 export Spherical, Cartesian3, Geodetic, GDZ
 export CoordinateVector, getcsys
 export get_mlt
+export FieldLineProblem, FieldLineCallback, trace
 
 include("info.jl")
 include("constants.jl")
@@ -173,7 +174,7 @@ export gdz2sph
 
 pair2func(p) = getfield(GeoCotrans, Symbol(p[1], "2", p[2]))
 const coord_maps = Dict(p => pair2func(p) for p in coord_pairs)
-
+include("trace.jl")
 include("workload.jl")
 
 end
