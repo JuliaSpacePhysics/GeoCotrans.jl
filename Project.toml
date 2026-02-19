@@ -27,7 +27,7 @@ GeoCotransSciMLExt = "SciMLBase"
 [compat]
 Bumper = "0.7"
 Dates = "1"
-DimensionalData = "0.29"
+DimensionalData = "0.29, 0.30"
 LazyArrays = "2"
 LinearAlgebra = "1"
 PrecompileTools = "1"
