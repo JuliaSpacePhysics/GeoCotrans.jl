@@ -1,57 +1,83 @@
-# GeoCotrans.jl Development Workflow
+# GeoCotrans.jl Use Case Workflow
 
-Guide for common development tasks in this Julia package for geocentric coordinate transformations and IGRF field modeling.
+Guide for common use cases: coordinate transformations, IGRF field evaluation, and field line tracing.
 
 ## Setup
 
-Instantiate dependencies:
-```
-julia --project -e "using Pkg; Pkg.instantiate()"
-```
-
-## Running Tests
-
-```
-julia --project --threads=auto test/runtests.jl
+```julia
+using GeoCotrans
+using Dates
 ```
 
-Tests use `TestItems.jl` / `TestItemRunner`. On stable Julia, JET static analysis also runs. To run a specific test item, use `@run_package_tests filter=ti->contains(ti.name, "keyword")`.
+## Coordinate Transformations
 
-## Building Docs
+Convert a position vector between geocentric frames using a `DateTime` for time-dependent rotations:
 
-```
-cd docs && julia --project make.jl
-```
+```julia
+t = DateTime(2020, 6, 1)
 
-Docs use Documenter.jl with doctests enabled. The doc site covers coordinate system descriptions, validation comparisons (vs IRBEM/PySPEDAS), and field line tracing examples.
+# GEO → GSM
+pos_geo = CoordinateVector{GEO}(3.0, 1.0, 2.0, t)   # RE units
+pos_gsm = geo2gsm(pos_geo)
 
-## Key Source Layout
+# GSM → SM
+pos_sm = gsm2sm(pos_gsm)
 
-- `src/cotrans/` — coordinate transformation pairs (GEI, GEO, GSM, GSE, MAG, SM)
-- `src/igrf.jl` + `src/spherical_harmonics.jl` — IGRF-14 field model
-- `src/types.jl` — `CoordinateVector{Frame, Representation}` type
-- `src/trace.jl` + `ext/GeoCotransSciMLExt.jl` — field line tracing via ODE
-- `ext/GeoCotransDimensionalDataExt.jl` — DimensionalData integration
-
-## Git Workflow
-
-Development branch: `claude/repo-workflow-skill-CwNSO`
-
-```bash
-# Stage and commit
-git add <files>
-git commit -m "description"
-
-# Push
-git push -u origin claude/repo-workflow-skill-CwNSO
+# Chain: GEO → GEI → GSE
+pos_gse = geo2gse(pos_geo)
 ```
 
-CI runs on push/PR: tests on Julia stable/LTS/pre-release, coverage to Codecov, docs deploy on main.
+Available frames: `GEO`, `GEI`, `GSM`, `GSE`, `MAG`, `SM`
 
-## Adding a Transformation
+Available representations: `Cartesian3` (default), `Spherical`, `Geodetic`
 
-1. Add `src/cotrans/<from>2<to>.jl` implementing the rotation matrix
-2. Register the pair in `src/cotrans/cotrans.jl` via the macro system
-3. Export the new function from `src/GeoCotrans.jl`
-4. Add test items in `test/`
-5. Add validation comparison in `docs/src/coords.md`
+```julia
+# Spherical representation
+pos_sph = CoordinateVector{GEO, Spherical}(6371.0, 45.0, 90.0, t)  # r[km], θ[deg], φ[deg]
+```
+
+## IGRF Field Evaluation
+
+Evaluate the IGRF-14 geomagnetic field at a given location and time (valid 1965–2030):
+
+```julia
+# igrf(date, altitude_km, colat_deg, lon_deg) → (Br, Bθ, Bφ) in nT
+Br, Bθ, Bφ = igrf(DateTime(2020, 1, 1), 400.0, 45.0, 120.0)
+
+# Or use the IGRF field model object
+field = IGRF()
+B = field(pos_geo)   # returns field vector in same frame
+```
+
+## Field Line Tracing
+
+Requires SciML (OrdinaryDiffEq) loaded as an extension:
+
+```julia
+using OrdinaryDiffEq
+
+# Trace a field line from a starting position
+start = CoordinateVector{GEO}(2.0, 0.0, 0.0, t)   # 2 RE on equator
+trace = trace_fieldline(start, IGRF(); alg=Tsit5())
+
+# Result is a trajectory of CoordinateVectors
+```
+
+## DimensionalData Integration
+
+Apply transformations to labeled arrays via the DimensionalData extension:
+
+```julia
+using DimensionalData
+
+# Transform a DimArray of positions
+da = DimArray(positions, (Ti(times),))
+da_gsm = geo2gsm(da)
+```
+
+## Common Patterns
+
+- All transformation functions accept both `CoordinateVector` and plain `SVector`/array inputs
+- Time is embedded in `CoordinateVector` and propagated automatically through chains
+- Inverse transforms are available: `gsm2geo`, `gsm2gei`, etc.
+- Use `mlt(pos)` to compute Magnetic Local Time from a position
