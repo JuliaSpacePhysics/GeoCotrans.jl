@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Field Line Tracing · GeoCotrans.jl</title><meta name="title" content="Field Line Tracing · GeoCotrans.jl"/><meta property="og:title" content="Field Line Tracing · GeoCotrans.jl"/><meta property="twitter:title" content="Field Line Tracing · GeoCotrans.jl"/><meta name="description" content="Documentation for GeoCotrans.jl."/><meta property="og:description" content="Documentation for GeoCotrans.jl."/><meta property="twitter:description" content="Documentation for GeoCotrans.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">GeoCotrans.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Field Line Tracing</a><ul class="internal"><li><a class="tocitem" href="#Basic-Usage"><span>Basic Usage</span></a></li><li><a class="tocitem" href="#Plotting-with-Makie"><span>Plotting with Makie</span></a></li><li><a class="tocitem" href="#2D-Visualization"><span>2D Visualization</span></a></li><li><a class="tocitem" href="#API-Reference"><span>API Reference</span></a></li></ul></li><li><a class="tocitem" href="../coords/">Validation &amp; Comparison</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Field Line Tracing</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Field Line Tracing</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaSpacePhysics/GeoCotrans.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaSpacePhysics/GeoCotrans.jl/blob/main/docs/src/field_line_tracing.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Field-Line-Tracing"><a class="docs-heading-anchor" href="#Field-Line-Tracing">Field Line Tracing</a><a id="Field-Line-Tracing-1"></a><a class="docs-heading-anchor-permalink" href="#Field-Line-Tracing" title="Permalink"></a></h1><article><details class="docstring" open="true"><summary id="GeoCotrans.FieldLineTracing-field_line_tracing"><a class="docstring-binding" href="#GeoCotrans.FieldLineTracing-field_line_tracing"><code>GeoCotrans.FieldLineTracing</code></a> — <span class="docstring-category">Module</span></summary><section><div><p>GeoCotrans.jl provides functionality to trace magnetic field lines.</p><p>This feature is provided via a package extension and requires an ODE solver package to be loaded in the active environment. For example, load <code>OrdinaryDiffEqTsit5</code> (or another SciML ODE solver) before calling <code>trace</code>.</p><p><strong>API</strong></p><ul><li><a href="../#GeoCotrans.FieldLineTracing.trace"><code>trace</code></a>, <a href="../#GeoCotrans.FieldLineTracing.FieldLineProblem"><code>FieldLineProblem</code></a>, <a href="../#GeoCotrans.FieldLineTracing.FieldLineCallback"><code>FieldLineCallback</code></a></li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaSpacePhysics/GeoCotrans.jl/blob/f59c8da8aaca0253c5b222a0fece74fe04192d6f/src/trace.jl#L1-L9">source</a></section></details></article><h2 id="Basic-Usage"><a class="docs-heading-anchor" href="#Basic-Usage">Basic Usage</a><a id="Basic-Usage-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-Usage" title="Permalink"></a></h2><pre><code class="language-julia hljs">using GeoCotrans, OrdinaryDiffEqTsit5, Dates
+
+# Define time for field evaluation
+t = DateTime(2020, 1, 1)
+
+# Trace a field line starting from [3, 0, 0] Earth radii (GEO coordinates)
+sol = trace(GEO(3.0, 0.0, 0.0), t, Tsit5())</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">retcode: Terminated
+Interpolation: specialized 4th order &quot;free&quot; interpolation
+t: 12-element Vector{Float64}:
+ 0.0
+ 0.0009999885482375654
+ 0.028570064912686398
+ 0.1407684080982351
+ 0.3519749672311441
+ 0.6431698683965004
+ 1.024306661606543
+ 1.5081972108001358
+ 2.099085981289496
+ 2.792534178589731
+ 3.205956676634449
+ 3.205956676634449
+u: 12-element Vector{StaticArraysCore.SVector{3, Float64}}:
+ [3.0, 0.0, 0.0]
+ [3.000024874434897, -0.00014500231793512512, 0.0009891069741289906]
+ [3.0003235012472826, -0.004134458625726653, 0.02826652634920791]
+ [2.993848453320644, -0.02015350777736001, 0.1390692215146891]
+ [2.9488860092075475, -0.048843247209553714, 0.3430541747614227]
+ [2.8224968633836514, -0.08360127134311553, 0.602120044818346]
+ [2.5662811017774287, -0.11798135726090243, 0.8800721963429805]
+ [2.1440347161854936, -0.1414701133669414, 1.110356322822682]
+ [1.563090620582933, -0.14097171618276977, 1.1992211601268272]
+ [0.8913228125031449, -0.1060612201590972, 1.0500477268481536]
+ [0.5381592102106133, -0.07300633778734437, 0.8396753772192972]
+ [0.5381592102106133, -0.07300633778734437, 0.8396753772192972]</code></pre><h2 id="Plotting-with-Makie"><a class="docs-heading-anchor" href="#Plotting-with-Makie">Plotting with Makie</a><a id="Plotting-with-Makie-1"></a><a class="docs-heading-anchor-permalink" href="#Plotting-with-Makie" title="Permalink"></a></h2><p>Here&#39;s a complete example showing how to trace and visualize magnetic field lines using GLMakie:</p><pre><code class="language-julia hljs">using GeoCotrans, OrdinaryDiffEqTsit5, Dates
+using CairoMakie
+
+# Time for field evaluation
+t = DateTime(2020, 1, 1)
+
+# Create figure
+fig = Figure(size = (800, 800))
+ax = Axis3(fig[1, 1],
+    xlabel = &quot;X (Re)&quot;,
+    ylabel = &quot;Y (Re)&quot;,
+    zlabel = &quot;Z (Re)&quot;,
+    title = &quot;IGRF Field Lines at $(Date(t))&quot;,
+    aspect = :data
+)
+
+# Draw Earth (unit sphere)
+θ_sphere = range(0, π, length=30)
+φ_sphere = range(0, 2π, length=60)
+x_sphere = [sin(θ) * cos(φ) for θ in θ_sphere, φ in φ_sphere]
+y_sphere = [sin(θ) * sin(φ) for θ in θ_sphere, φ in φ_sphere]
+z_sphere = [cos(θ) for θ in θ_sphere, φ in φ_sphere]
+surface!(ax, x_sphere, y_sphere, z_sphere, color = :lightblue, alpha = 0.8)
+
+# Trace field lines from different starting positions
+L_values = [2.0, 3.0, 4.0, 5.0]  # L-shell values
+colors = [:red, :orange, :green, :blue]
+
+for (L, color) in zip(L_values, colors)
+    # Trace in both directions from the equator
+    for dir in [1, -1]
+        sol = trace(GEO(L, 0.0, 0.0), t, Tsit5(); dir = dir)
+        # Plot the field line
+        plot!(ax, sol; color = color, linewidth = 2, idxs = (1, 2, 3),
+            label = dir == 1 ? &quot;L = $L&quot; : nothing)
+    end
+end
+
+axislegend(ax, position = :rt) # Add legend
+limits!(ax, -6, 6, -6, 6, -6, 6) # Set view limits
+
+fig</code></pre><img src="9140200a.png" alt="Example block output"/><h2 id="2D-Visualization"><a class="docs-heading-anchor" href="#2D-Visualization">2D Visualization</a><a id="2D-Visualization-1"></a><a class="docs-heading-anchor-permalink" href="#2D-Visualization" title="Permalink"></a></h2><pre><code class="language-julia hljs">using GeoCotrans, OrdinaryDiffEqTsit5, Dates
+using CairoMakie
+
+t = DateTime(2020, 1, 1)
+
+fig = Figure(size = (1000, 500))
+
+# Left panel: Meridional plane (X-Z)
+ax1 = Axis(fig[1, 1],
+    xlabel = &quot;X (Re)&quot;, ylabel = &quot;Z (Re)&quot;,
+    title = &quot;Field Lines in Meridional Plane&quot;,
+    aspect = DataAspect()
+)
+
+# Draw Earth cross-section
+θ_circle = range(0, 2π, length=100)
+lines!(ax1, cos.(θ_circle), sin.(θ_circle), color = :lightblue, linewidth = 3)
+
+# Trace field lines
+for L in [2.0, 3.0, 4.0, 5.0, 6.0]
+    for dir in [1, -1]
+        sol = trace(GEO(L, 0.0, 0.0), t, Tsit5(); dir = dir)
+        lines!(ax1, sol, idxs = (1, 3), color = :darkblue, linewidth = 1.5)
+    end
+end
+
+limits!(ax1, -7, 7, -7, 7)
+
+# Right panel: Equatorial plane (X-Y)
+ax2 = Axis(fig[1, 2],
+    xlabel = &quot;X (Re)&quot;, ylabel = &quot;Y (Re)&quot;,
+    title = &quot;Field Lines in Equatorial Plane&quot;,
+    aspect = DataAspect()
+)
+
+# Draw Earth cross-section
+lines!(ax2, cos.(θ_circle), sin.(θ_circle), color = :lightblue, linewidth = 3)
+
+# Starting points slightly off equator to see field line structure
+for L in [3.0, 4.0, 5.0]
+    for φ in range(0, 2π, length=13)[1:12]
+        y0, x0 = L .* sincos(φ)
+        # Start slightly above equator
+        sol = trace(GEO(x0, y0, 0.1), t, Tsit5(); dir = 1)
+        lines!(ax2, sol, idxs = (1, 2), color = :darkgreen, linewidth = 1)
+    end
+end
+
+limits!(ax2, -7, 7, -7, 7)
+
+fig</code></pre><img src="61cfa5eb.png" alt="Example block output"/><h2 id="API-Reference"><a class="docs-heading-anchor" href="#API-Reference">API Reference</a><a id="API-Reference-1"></a><a class="docs-heading-anchor-permalink" href="#API-Reference" title="Permalink"></a></h2><article><details class="docstring" open="true"><summary id="GeoCotrans.FieldLineTracing.FieldLineProblem-field_line_tracing"><a class="docstring-binding" href="#GeoCotrans.FieldLineTracing.FieldLineProblem-field_line_tracing"><code>GeoCotrans.FieldLineTracing.FieldLineProblem</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">FieldLineProblem(pos, tspan, t; model=IGRF(), dir=1)</code></pre><p>Create an ODEProblem for tracing a magnetic field line in <code>model</code> at time <code>t</code>.</p><ul><li><code>dir::Int = 1</code>: Tracing direction (+1 for parallel to B, -1 for anti-parallel)</li></ul><p><strong>Example</strong></p><pre><code class="language-julia hljs">using GeoCotrans, OrdinaryDiffEqTsit5, Dates
+
+t = DateTime(2020, 1, 1)
+pos = [3.0, 0.0, 0.0]
+prob = FieldLineProblem(pos, (0.0, 50.0), t)
+sol = solve(prob, Tsit5())</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaSpacePhysics/GeoCotrans.jl/blob/f59c8da8aaca0253c5b222a0fece74fe04192d6f/src/trace.jl#L14-L30">source</a></section></details></article><article><details class="docstring" open="true"><summary id="GeoCotrans.FieldLineTracing.FieldLineCallback-field_line_tracing"><a class="docstring-binding" href="#GeoCotrans.FieldLineTracing.FieldLineCallback-field_line_tracing"><code>GeoCotrans.FieldLineTracing.FieldLineCallback</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">FieldLineCallback(; r0=1.0, rlim=10.0)</code></pre><p>Create a callback for terminating field line integration at boundaries.</p><p><strong>Keyword Arguments</strong></p><ul><li><code>r0 = 1.0</code>: Inner radial boundary (Earth radii)</li><li><code>rlim = 10.0</code>: Outer radial boundary (Earth radii)</li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaSpacePhysics/GeoCotrans.jl/blob/f59c8da8aaca0253c5b222a0fece74fe04192d6f/src/trace.jl#L33-L41">source</a></section></details></article><article><details class="docstring" open="true"><summary id="GeoCotrans.FieldLineTracing.trace-field_line_tracing"><a class="docstring-binding" href="#GeoCotrans.FieldLineTracing.trace-field_line_tracing"><code>GeoCotrans.FieldLineTracing.trace</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">trace(pos, t, solver; kwargs...) :: ODESolution</code></pre><p>Trace a magnetic field line using the specified SciML solver.</p><p><strong>Keyword Arguments</strong></p><ul><li><code>model = IGRF()</code>: Magnetic field model to use</li><li><code>dir = 1</code>: Tracing direction (+1 for parallel to B, -1 for anti-parallel)</li><li><code>r0 = 1.0</code>: Inner radial boundary (Earth radii)</li><li><code>rlim = 10.0</code>: Outer radial boundary (Earth radii)</li><li><code>maxs = 100.0</code>: Maximum arc length for integration</li><li><code>in = getcsys(pos)</code>: Input coordinate system (Reference frame and coordinate representation)</li><li>Additional keyword arguments are passed to <code>solve()</code></li></ul><p><strong>Example</strong></p><pre><code class="language-julia hljs">using GeoCotrans, OrdinaryDiffEqTsit5
+sol = trace([3.0, 0.0, 0.0], t, Tsit5())</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaSpacePhysics/GeoCotrans.jl/blob/f59c8da8aaca0253c5b222a0fece74fe04192d6f/src/trace.jl#L44-L63">source</a></section></details></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../coords/">Validation &amp; Comparison »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 24 April 2026 23:16">Friday 24 April 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
