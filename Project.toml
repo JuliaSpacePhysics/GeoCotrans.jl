@@ -4,7 +4,7 @@ version = "0.2.3"
 authors = ["Beforerr <zzj956959688@gmail.com> and contributors"]
 
 [workspace]
-projects = ["docs", "test"]
+projects = ["docs", "test", "benchmark"]
 
 [deps]
 Bumper = "8ce10254-0962-460f-a3d8-1f77fea1446e"
