@@ -137,12 +137,19 @@ end
 @testitem "mlt" begin
     using Dates
     using GeoCotrans: get_mlt
+    using DimensionalData
     using Chairmarks
 
     r = [2.195517156287977, 2.834061428571752, 0.34759070278576953]
     t = DateTime("2015-02-02T06:12:43")
     IRBEM_MLT = 9.56999052595853
     @test get_mlt(r, t) ≈ IRBEM_MLT rtol = 1.0e-4
+
+    times = t .+ Minute.(0:2)
+    A = stack([r, r, r]; dims = 1)
+    da = DimArray(A, (Ti(times), Y(1:3)))
+    @test get_mlt(da) ≈ get_mlt(A, times; dim = 1)
+
     @info @b get_mlt($r, $t)
 end
 
