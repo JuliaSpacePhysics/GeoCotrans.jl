@@ -61,8 +61,10 @@ for p in coord_pairs
         @assert frame(x) == $T1()
         return $T2(($matfunc(t) * x)..., t)
     end
-    @eval @inline function $func(A::AbstractMatrix, times::AbstractVector; dims)
-        return stack($func, eachslice(A; dims), times; dims)
+    @eval @inline function $func(A::AbstractMatrix, times::AbstractVector; dim = nothing, dims = nothing)
+        dim = @something dim dims
+        @assert !isnothing(dim) "missing required keyword argument `dim`"
+        return stack($func, eachslice(A; dims = dim), times; dims = dim)
     end
     @eval export $func
 

@@ -6,10 +6,10 @@ import GeoCotrans
 
 for f in nameof.(values(coord_maps))
     @eval import GeoCotrans: $f
-    @eval @inline function $f(A)
-        dims = dimnum(A, TimeDim)
-        times = A.dims[dims].val
-        data = $f(parent(A), times; dims)
+    @eval @inline function $f(A::AbstractDimMatrix)
+        dim = dimnum(A, TimeDim)
+        times = A.dims[dim].val
+        data = $f(parent(A), times; dim)
         return rebuild(A, data)
     end
 end

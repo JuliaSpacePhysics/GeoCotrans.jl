@@ -54,9 +54,7 @@ end
     igrf_B(r, θ, φ, t; max_degree=IGRF_degree) -> (Br, Bθ, Bφ)
 
 Calculate IGRF model components in geocentric coordinates `(r [Re], θ [rad], φ [rad])`
-at time `t`.
-
-`r` is the radius in Earth radii (Re), `θ` is the colatitude in degrees, and `φ` is the longitude in degrees.
+at time `t` where `r` is the radius, `θ` the colatitude, and `φ` the longitude.
 """
 function igrf_B(r, θ, φ, t; max_degree = nothing)
     max_degree = something(max_degree, IGRF_degree)
@@ -104,8 +102,8 @@ m(r, θ, φ, t)
 # When input is in different coordinate system, specify `in` or decorate the input
 # By default, the output for GDZ input is (Be, Bn, Bu) in East-North-Up (ENU) frame
 lat, lon = 60.39299, 5.32415
-m2 = IGRF(; in = GDZ())
-m2(lat, lon, 0, t)
+m2 = IGRF()
+m2(lat, lon, 0, t; in = GDZ())
 m(GDZ(lat, lon, 0), t)
 ```
 """
