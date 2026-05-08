@@ -115,13 +115,13 @@ end
 
 @testitem "geo2mag" begin
     using Dates
-    using GeoCotrans: geo2mag_mat, calc_dipole_geo, calc_dipole_angle, get_igrf_coeffs
+    using GeoCotrans: calc_dipole_geo, calc_dipole_angle, get_igrf_coeffs
 
     t = DateTime(2001, 1, 1, 2, 3, 4)
 
     # Test that dipole direction in MAG is along Z-axis
     dipole_geo = calc_dipole_geo(t)
-    dipole_mag = geo2mag_mat(t) * dipole_geo
+    dipole_mag = rotation(GEO, MAG, t) * dipole_geo
     @test dipole_mag ≈ [0, 0, 1]
 
     # Test CoordinateVector transformation
@@ -155,12 +155,12 @@ end
 
 @testitem "gsm2sm" begin
     using Dates
-    using GeoCotrans: gsm2sm_mat, sm2gsm_mat, dipole_tilt, gei2gsm_mat, calc_dipole_gei
+    using GeoCotrans: dipole_tilt, calc_dipole_gei
 
     t = DateTime(2001, 1, 1, 2, 3, 4)
-    M = gsm2sm_mat(t)
+    M = rotation(GSM, SM, t)
     # Test that dipole in GSM transforms to Z-axis in SM
-    dipole_gsm = gei2gsm_mat(t) * calc_dipole_gei(t)
+    dipole_gsm = rotation(GEI, GSM, t) * calc_dipole_gei(t)
     dipole_sm = M * dipole_gsm
     @test dipole_sm ≈ [0, 0, 1]
     # Verify dipole tilt angle is consistent with dipole in GSM
@@ -200,6 +200,71 @@ end
     geo = GEO(1.0, 2.0, 3.0, t)
     @test SM(geo) ≈ SM(GEI(geo))
     @test GEO(SM(geo)) ≈ geo
+end
+
+@testitem "rotation graph" begin
+    using Dates
+    using LinearAlgebra
+
+    t = DateTime(2001, 1, 1, 2, 3, 4)
+
+    # identity
+    @test rotation(GEI, GEI, t) == I
+    @test rotation(GSM, GSM, t) == I
+
+    # inverse via transpose round-trips to identity (direct edges)
+    for (F1, F2) in ((GEI, GSM), (GSE, GSM), (GEO, MAG), (GSM, SM), (GEI, GEO))
+        R = rotation(F1, F2, t)
+        @test R * rotation(F2, F1, t) ≈ I
+        @test rotation(F2, F1, t) ≈ transpose(R)
+    end
+
+    # all chain pairs round-trip to identity
+    for (F1, F2) in ((GEI, SM), (GEO, GSM), (GEO, SM), (GEI, MAG), (SM, MAG))
+        @test rotation(F1, F2, t) * rotation(F2, F1, t) ≈ I
+    end
+end
+
+@testitem "transform interface" begin
+    using Dates
+    using LinearAlgebra
+
+    t = DateTime(2001, 1, 1, 2, 3, 4)
+    R = rotation(GEI, GSM, t)
+
+    # raw vector with explicit (to, from)
+    x = [1.0, 2.0, 3.0]
+    @test transform(GSM, GEI, x, t) ≈ R * x
+
+    # CoordinateVector: frame inferred, t inferred
+    gei = GEI(1.0, 2.0, 3.0, t)
+    gsm = transform(GSM, gei)
+    @test gsm isa CoordinateVector{GSM}
+    @test gsm ≈ gei2gsm(gei, t)
+    @test gsm.t == t
+
+    # CoordinateVector with explicit t override
+    @test transform(GSM, gei, t) ≈ gsm
+
+    # frame mismatch is caught
+    @test_throws AssertionError transform(GSM, GSE, gei, t)
+
+    # identity
+    @test transform(GEI, GEI, x, t) ≈ x
+    @test transform(GEI, gei) ≈ gei
+
+    # matrix path: scalar time builds rotation once
+    A = rand(3, 5)
+    @test transform(GSM, GEI, A, t) ≈ R * A
+
+    # matrix path: per-sample times
+    ts = [t + Hour(i) for i in 0:4]
+    B = transform(GSM, GEI, A, ts; dims = 2)
+    @test B ≈ gei2gsm(A, ts; dims = 2)
+
+    # matrix path: dims = 1
+    A1 = permutedims(A)
+    @test transform(GSM, GEI, A1, ts; dims = 1) ≈ permutedims(B)
 end
 
 @testitem "Aqua" begin
