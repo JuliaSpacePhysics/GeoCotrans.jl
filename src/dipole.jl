@@ -43,20 +43,21 @@ b0: dipole strength (nT)
     return θ, φ, b0
 end
 
+calc_dipole_angle(time) = calc_dipole_angle(_get_igrf_dipole_coeffs(time)...)
+
 """
     calc_dipole_geo(time)
 
 Compute dipole direction in GEO coordinates.
 """
 function calc_dipole_geo(time)
-    g, h = get_igrf_coeffs(time)
-    θ, φ = @inbounds calc_dipole_angle(g[2], g[3], h[3])
+    θ, φ = calc_dipole_angle(time)
     sθ, cθ = sincos(θ)
     sφ, cφ = sincos(φ)
     return SA[sθ * cφ, sθ * sφ, cθ]
 end
 
-calc_dipole_gei(time) = rotation(GEO, GEI,time) * calc_dipole_geo(time)
+calc_dipole_gei(time) = rotation(GEO, GEI, time) * calc_dipole_geo(time)
 
 """
     dipole_tilt(time)
@@ -68,7 +69,7 @@ positive when the north magnetic pole is tilted toward the Sun.
 """
 function dipole_tilt(time)
     gst, ra, dec = csundir(time)
-    dipole_gei = rotation(GEO, GEI,gst) * calc_dipole_geo(time)
+    dipole_gei = rotation(GEO, GEI, gst) * calc_dipole_geo(time)
     sun_gei = calc_sun_gei(ra, dec)
     # sin(μ) = dipole · sun
     return asin(dot(dipole_gei, sun_gei))

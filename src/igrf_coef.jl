@@ -45,6 +45,15 @@ const igrf_lookup = Dict(
         for i in IGRF_min_year:5:(IGRF_max_year - 5)
 )
 
+struct LinearInterp{T, N, A <: AbstractArray{T, N}, B <: AbstractArray{T, N}, R} <: AbstractArray{T, N}
+    base::A
+    delta::B
+    ratio::R
+end
+
+Base.size(li::LinearInterp) = size(li.base)
+@inline Base.getindex(li::LinearInterp, i::Int...) = @inbounds li.delta[i...] * li.ratio + li.base[i...]
+
 """
     get_igrf_coeffs(time)
 
@@ -56,9 +65,16 @@ but with higher precision (IRBEM uses `year` as the time unit).
 function get_igrf_coeffs(time)
     year0, ratio = _get_year0_ratio(time)
     g0, h0, dg, dh = @inbounds igrf_lookup[year0]
-    g = @~ @. dg * ratio + g0
-    h = @~ @. dh * ratio + h0
-    return LazyArray(g), LazyArray(h)
+    return LinearInterp(g0, dg, ratio), LinearInterp(h0, dh, ratio)
+end
+
+@inline @inbounds function _get_igrf_dipole_coeffs(time)
+    year0, ratio = _get_year0_ratio(time)
+    g0, h0, dg, dh = igrf_lookup[year0]
+    g10 = dg[2] * ratio + g0[2]
+    g11 = dg[3] * ratio + g0[3]
+    h11 = dh[3] * ratio + h0[3]
+    return g10, g11, h11
 end
 
 function get_igrf_coeffs!(g, h, time)

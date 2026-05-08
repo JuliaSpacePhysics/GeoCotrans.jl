@@ -10,8 +10,7 @@ With dipole colatitude `θ = π/2 - lat` and dipole longitude `φ = long`, this
 factors as `R_y(θ) * R_z(-φ)`.
 """
 function rotation(::Type{GEO}, ::Type{MAG}, time)
-    g, h = get_igrf_coeffs(time)
-    θ, φ = @inbounds calc_dipole_angle(g[2], g[3], h[3])
+    θ, φ = calc_dipole_angle(time)
     sθ, cθ = sincos(θ)
     sφ, cφ = sincos(φ)
 
