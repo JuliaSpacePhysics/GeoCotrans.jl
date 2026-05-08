@@ -1,7 +1,6 @@
 # using ForwardDiff
 # ReverseDiff does not work with `UnsafeArray`
 using Bumper
-using LazyArrays
 
 export get_igrf_coeffs, get_igrf_coeffs!
 export IGRF, igrf, igrf_B

@@ -53,17 +53,17 @@ end
     end
     legendre!(Val(:schmidt), P, θ, max_degree)
 
-    Br, Bθ, Bφ = 0.0, 0.0, 0.0
+    Br, Bθ, Bφ = zero(T), zero(T), zero(T)
 
     # r is in planetary radii (dimensionless), so (1/r)^k gives the radial dependence
     # For internal field: B components use (1/r)^(n+2)
-    ratio = 1.0 / r
+    ratio = inv(r)
     pow = ratio * ratio * ratio   # (1/r)^(n+2) for magnetic field
     flag = abs(sinθ) > 1.0e-10
     sinθ = flag ? sinθ : 1.0e-10
     # Sum over degrees and orders
     @inbounds for l in 1:max_degree
-        Vl, dVl, φVl = 0.0, 0.0, 0.0
+        Vl, dVl, φVl = zero(T), zero(T), zero(T)
         for m in 0:min(l, max_order)
             g = get_coeff(G, l, m)
             h = get_coeff(H, l, m)
