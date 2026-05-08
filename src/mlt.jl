@@ -22,7 +22,7 @@ MLT is computed from the difference between the magnetic longitudes of the posit
     return mod(mlt, 24)
 end
 
-@inline function get_mlt(xGEO::AbstractMatrix, times; dim)
+@inline function get_mlt(xGEO::AbstractMatrix, times; dim = 2)
     out = similar(xGEO, axes(xGEO, dim))
     return out .= get_mlt.(eachslice(xGEO; dims = dim), times)
 end

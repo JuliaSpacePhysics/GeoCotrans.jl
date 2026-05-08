@@ -103,8 +103,8 @@ m(r, θ, φ, t)
 # When input is in different coordinate system, specify `in` or decorate the input
 # By default, the output for GDZ input is (Be, Bn, Bu) in East-North-Up (ENU) frame
 lat, lon = 60.39299, 5.32415
-m2 = IGRF(; in = GDZ())
-m2(lat, lon, 0, t)
+m2 = IGRF()
+m2(lat, lon, 0, t; in = GDZ())
 m(GDZ(lat, lon, 0), t)
 ```
 """
