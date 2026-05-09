@@ -39,7 +39,8 @@ b0: dipole strength (nT)
 @inline function calc_dipole_angle(g10, g11, h11)
     b0 = sqrt(g10^2 + g11^2 + h11^2)
     θ = acos(-g10 / b0)
-    φ = atan(h11 / g11)
+    # MAG +Z uses geomagnetic north pole: -Gauss dipole vector.
+    φ = atan(-h11, -g11)
     return θ, φ, b0
 end
 

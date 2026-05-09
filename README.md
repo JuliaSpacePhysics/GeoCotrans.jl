@@ -32,7 +32,10 @@ plot(sol; idxs = (1, 2)) # Equatorial plane (X-Y)
     - `gei2gsm`, `gse2gsm`, `gsm2sm`
     - `gei2sm`, `geo2sm`, `gei2mag`
 
-See [documentation](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/) for full signatures.
+See [documentation](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/) for full signatures
+- [Coordinate validation](https://juliaspacephysics.github.io/GeoCotrans.jl/dev/coords/) for comparing coordinate transformations with IRBEM and PySPEDAS
+- [TsyganenkoModels.jl](https://github.com/JuliaSpacePhysics/TsyganenkoModels.jl) for external Tsyganenko magnetosphere models
+- [GeoAACGM.jl](https://github.com/JuliaSpacePhysics/GeoAACGM.jl) for AACGM coordinates
 
 ## Conventions
 

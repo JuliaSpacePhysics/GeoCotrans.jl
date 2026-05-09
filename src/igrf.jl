@@ -1,5 +1,3 @@
-# using ForwardDiff
-# ReverseDiff does not work with `UnsafeArray`
 using Bumper
 
 export get_igrf_coeffs, get_igrf_coeffs!
@@ -53,9 +51,7 @@ end
     igrf_B(r, θ, φ, t; max_degree=IGRF_degree) -> (Br, Bθ, Bφ)
 
 Calculate IGRF model components in geocentric coordinates `(r [Re], θ [rad], φ [rad])`
-at time `t`.
-
-`r` is the radius in Earth radii (Re), `θ` is the colatitude in degrees, and `φ` is the longitude in degrees.
+at time `t`, where `r` is the radius, `θ` the colatitude, and `φ` the longitude.
 """
 function igrf_B(r, θ, φ, t; max_degree = nothing)
     max_degree = something(max_degree, IGRF_degree)

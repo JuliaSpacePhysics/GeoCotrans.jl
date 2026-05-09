@@ -1,6 +1,6 @@
 @testitem "get_dipole_terms" begin
     using Dates
-    using GeoCotrans: get_dipole_terms
+    using GeoCotrans: calc_dipole_angle, get_dipole_terms
 
     # Test with known IGRF coefficients from a specific date
     t = DateTime(2015)
@@ -30,6 +30,9 @@
     @test result.y0 ≈ result2.y0 rtol = 1.0e-1
     @test result.z0 ≈ result2.z0 rtol = 1.0e-1
     @info result result2
+
+    @test calc_dipole_angle(-30000.0, -1500.0, 5000.0)[2] ≈ atan(-5000.0, 1500.0)
+    @test calc_dipole_angle(-30000.0, 1500.0, -5000.0)[2] ≈ atan(5000.0, -1500.0)
 
 end
 

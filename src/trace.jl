@@ -1,7 +1,7 @@
 """
-GeoCotrans.jl provides functionality to trace magnetic field lines.
+Trace magnetic field lines using ODE solvers.
 
-This feature is provided via a package extension and requires an ODE solver package to be loaded in the active environment. For example, load `OrdinaryDiffEqTsit5` (or another SciML ODE solver) before calling `trace`.
+Requires loading SciML ODE solver package (e.g., `OrdinaryDiffEqTsit5`) before use.
 
 ## API
 

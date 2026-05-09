@@ -89,13 +89,15 @@ end
 @inline transform(To, From, x, t) = rotation(From, To, t) * x
 
 # matrix paths: vector ts is per-sample, anything else is a scalar time
-@inline function transform(To, From, A::AbstractMatrix, ts::AbstractVector; dims = 2)
+@inline function transform(To, From, A::AbstractMatrix, ts::AbstractVector; dim = nothing, dims = nothing)
+    dims = @something dim dims 2
     return stack(eachslice(A; dims), ts; dims) do x, t
         rotation(From, To, t) * x
     end
 end
 
-@inline function transform(To, From, A::AbstractMatrix, t; dims = 2)
+@inline function transform(To, From, A::AbstractMatrix, t; dim = nothing, dims = nothing)
+    dims = @something dim dims 2
     R = rotation(From, To, t)
     return dims == 2 ? R * A : transpose(R * transpose(A))
 end
