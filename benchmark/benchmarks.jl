@@ -8,8 +8,8 @@ const SUITE = BenchmarkGroup()
 const T0 = DateTime(2021, 3, 28, 1)
 const TIMES = DateTime(2021, 1, 1, 0, 0, 0) .+ Hour.(0:127)
 
-const GEO_POS = GEO(1.0, 2.0, 3.0, T0)
-const GSM_POS = GSM(1.0, 2.0, 3.0, T0)
+const GEO_POS = GEO(1.0, 2.0, 3.0,)
+const GSM_POS = GSM(1.0, 2.0, 3.0)
 const R_SPH = [1.0, deg2rad(45), deg2rad(45)]
 const R_GDZ = GDZ(60.39299, 5.32415)
 const POS_TIME_MAJOR = rand(length(TIMES), 3)
