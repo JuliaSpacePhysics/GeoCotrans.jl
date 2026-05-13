@@ -17,7 +17,7 @@ from_cartesian(::Cartesian3, B, r) = B
 from_cartesian(::Geodetic, B, r) = car2enu(B, r)
 
 function transform_to(::F0, ::F1, pos, t) where {F0, F1}
-    return F0 == F1 ? pos : F1(F0(pos), t)
+    return F0 == F1 ? pos : transform(F1, F0, pos, t)
 end
 
 function transform_position(f0, r0, f1, r1, 𝐫, t)

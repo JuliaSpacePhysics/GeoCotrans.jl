@@ -3,54 +3,42 @@ using StaticArrays: Size
 include("FieldModels/FieldModels.jl")
 
 """
-    CoordinateVector{F, T}
+    CoordinateVector{F, R}
 
 3-element `FieldVector` in a specific coordinate frame `F` using representation `R`.
 """
-struct CoordinateVector{F, R, T, T2} <: FieldVector{3, T}
+struct CoordinateVector{F, R, T} <: FieldVector{3, T}
     x::T
     y::T
     z::T
-    t::T2
 end
 
-function CoordinateVector{F, R}(x::T, y::T, z::T, t::T2 = nothing) where {F, R, T, T2}
-    return CoordinateVector{F, R, T, T2}(x, y, z, t)
+function CoordinateVector{F, R}(x::T, y::T, z::T) where {F, R, T}
+    return CoordinateVector{F, R, T}(x, y, z)
 end
 
-CoordinateVector{F}(x, y, z, t = nothing) where {F} = CoordinateVector{F, Cartesian3}(x, y, z, t)
-CoordinateVector{F, R}(x, y, z, t = nothing) where {F, R} =
-    CoordinateVector{F, R}(promote(x, y, z)..., t)
-CoordinateVector{F, R, T}(x::T, y::T, z::T) where {F, R, T} =
-    CoordinateVector{F, R, T, Nothing}(x, y, z, nothing)
-
-# StaticArrays tries to call that type with 3 arguments (x, y, z)
-# I do not know how to carry time information forward when doing operations like Matrix multiplication
-# So default time to nothing for now :(
-StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1, TT}}, ::Type{T2}, ::Size) where {C, R, T1, TT, T2} =
+CoordinateVector{F}(x, y, z) where {F} = CoordinateVector{F, Cartesian3}(x, y, z)
+CoordinateVector{F, R}(x, y, z) where {F, R} =
+    CoordinateVector{F, R}(promote(x, y, z)...)
+StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1}}, ::Type{T2}, ::Size) where {C, R, T1, T2} =
     CoordinateVector{C, R, T2}
 
 for sys in (:GEI, :GEO, :GSM, :GSE, :MAG, :SM)
     doc = """$(FrameDescriptions[sys])
 
     $(get(FrameDefinitions, sys, ""))
-
-    To Construct a [`CoordinateVector`](@ref) in `$sys` reference frame with cartesian representation.
-
-        $sys(x, y, z, t = nothing)
-        $sys(𝐫, t = nothing)
     """
 
     @eval begin
         struct $sys <: AbstractReferenceFrame end
         @doc $doc $sys
-        $sys(x, y, z, t = nothing) = CoordinateVector{$sys}(x, y, z, t)
-        function $sys(𝐫, t = nothing)
+        $sys(x, y, z) = CoordinateVector{$sys}(x, y, z)
+        function $sys(𝐫)
             @assert length(𝐫) == 3
             # check when frame is specified
             f = frame(𝐫)
             !isnothing(f) && @assert f isa $sys
-            return CoordinateVector{$sys}(𝐫[1], 𝐫[2], 𝐫[3], t)
+            return CoordinateVector{$sys}(𝐫[1], 𝐫[2], 𝐫[3])
         end
         export $sys
     end

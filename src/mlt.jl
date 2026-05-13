@@ -10,12 +10,10 @@ MLT is computed from the difference between the magnetic longitudes of the posit
 - [IRBEM implementation](https://github.com/IRBEM/IRBEM/blob/5c2c6c2/src/geo_tran.f)
 """
 @inline function get_mlt(xGEO, time)
-    x_geo = GEO(xGEO, time)
-    x_mag = MAG(x_geo)
-    mlon_pos = φ(x_mag)
+    mlon_pos = φ(geo2mag(GEO(xGEO), time))
 
     x_sun_gei = calc_sun_gei(time)
-    x_sun_mag = MAG(GEO(GEI(x_sun_gei, time)))
+    x_sun_mag = gei2mag(x_sun_gei, time)
     mlon_sun = φ(x_sun_mag)
 
     mlt = rad2deg(mlon_pos - mlon_sun) / 15 + 12
