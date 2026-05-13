@@ -251,6 +251,12 @@ end
     # matrix path: dims = 1
     A1 = permutedims(A)
     @test transform(GSM, GEI, A1, ts; dims = 1) ≈ permutedims(B)
+
+    # Pair syntax: from=>to
+    @test transform(GEI => GSM, x, t) ≈ transform(GSM, GEI, x, t)
+    @test transform(GEI => GSM, gei, t) ≈ gsm
+    @test transform(GEI => GSM, A, t) ≈ R * A
+    @test transform(GEI => GSM, A, ts; dims = 2) ≈ B
 end
 
 @testitem "Aqua" begin
