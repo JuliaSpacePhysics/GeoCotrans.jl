@@ -16,9 +16,9 @@ rotation(::Type{F}, ::Type{F}, t) where {F} = LinearAlgebra.I
 
 """
     transform(to, x, t)
-    transform(to, from, x, t)
+    transform(from=>to, x, t)
 
-Transform `x` to reference frame `to` at time(s) `t`.
+Transform `x` to reference frame `to` at time(s) `t`. Omit `from` if it can be inferred`.
 
 `x` may be a vector, or a matrix of stacked vectors paired with either
 a scalar `t` or a vector `ts` (per-sample).
@@ -85,6 +85,9 @@ end
     @assert F == From
     return To((rotation(From, To, t) * x)...)
 end
+
+@inline transform(p::Pair, x, t; kw...) = transform(p.second, p.first, x, t; kw...)
+@inline transform(p::Pair, x::CoordinateVector, t) = transform(p.second, p.first, x, t)
 
 @inline transform(To, From, x, t) = rotation(From, To, t) * x
 
