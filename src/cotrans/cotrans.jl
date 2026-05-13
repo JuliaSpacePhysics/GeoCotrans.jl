@@ -78,12 +78,12 @@ end
 
 # ── transform methods (canonical: type-form) ──────────────────────────────────
 
-@inline transform(To, x::CoordinateVector{F}, t = x.t) where {F} =
+@inline transform(To, x::CoordinateVector{F}, t) where {F} =
     transform(To, F, x, t)
 
 @inline function transform(To, From, x::CoordinateVector{F}, t) where {F}
     @assert F == From
-    return To((rotation(From, To, t) * x)..., t)
+    return To((rotation(From, To, t) * x)...)
 end
 
 @inline transform(To, From, x, t) = rotation(From, To, t) * x
@@ -116,8 +116,6 @@ for p in coord_pairs
     @eval @doc $doc $func
     @eval @inline $func(x, t; kw...) = transform($T2, $T1, x, t; kw...)
     @eval export $func
-
-    @eval $T2(x::CoordinateVector{$T1}, t = nothing) = $func(x, @something(t, x.t))
 end
 
 pair2func(p) = getfield(GeoCotrans, Symbol(p[1], "2", p[2]))

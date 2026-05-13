@@ -28,12 +28,7 @@ end
 
     𝐫 = GDZ(0, 60, 5)
     @test getcsys(𝐫) == getcsys(GDZ) == (GEO(), Geodetic())
-    @test 𝐫 .* 2.0 isa CoordinateVector{GEO, Geodetic}
-
-    t = Date(2021, 3, 28)
-    𝐫_t = GDZ(0, 60, 5, t)
-    @test getcsys(𝐫_t) == getcsys(GDZ)
-    @test (𝐫_t .* 2.0).t == nothing
+    @test 𝐫 .* 2.0 isa GeoCotrans.CoordinateVector{GEO, Geodetic}
     @test representation(𝐫) == Geodetic()
 end
 
@@ -42,14 +37,11 @@ end
     using DimensionalData
 
     t = Date(2021, 1, 1)
-    gse = GSE(1, 2, 3)
-    gse_t = GSE(1, 2, 3, t)
+    gse = [1, 2, 3]
     gsm = gse2gsm(gse, t)
-    @test gsm isa CoordinateVector{GSM}
-    @test gsm.t == t
-    @test GSM(gse, t) === gsm
-    @test GSM(gse_t) === gsm
-    @test_throws AssertionError gse2gsm(GSM(1, 2, 3), t)
+    @test gsm isa AbstractVector
+    @test size(gsm) == (3,)
+    @test_throws AssertionError gse2gsm(GeoCotrans.CoordinateVector{GSM, Cartesian3}(1, 2, 3), t)
 
     # Test GSE->GSM transformation
     # Data from Python test case
@@ -125,13 +117,11 @@ end
     @test dipole_mag ≈ [0, 0, 1]
 
     # Test CoordinateVector transformation
-    geo = GEO(2.8011944117533565, -2.4048913761357267, 4.5066403602406275)
-    geo_t = GEO(geo, t)
+    geo = [2.8011944117533565, -2.4048913761357267, 4.5066403602406275]
     mag = geo2mag(geo, t)
     r_mag = [2.298686529948157, 1.8997853069109853, 5.004683409035982]
     @test mag ≈ r_mag
-    @test MAG(geo, t) === MAG(geo_t) === mag
-    @test GEO(MAG(geo_t)) ≈ geo_t
+    @test mag2geo(mag, t) ≈ geo
 end
 
 @testitem "mlt" begin
@@ -150,7 +140,7 @@ end
     da = DimArray(A, (Ti(times), Y(1:3)))
     @test get_mlt(da) ≈ get_mlt(A, times; dim = 1)
 
-    @info @b get_mlt($r, $t)
+    @test (@b get_mlt($r, $t)).allocs == 0
 end
 
 @testitem "gsm2sm" begin
@@ -168,14 +158,13 @@ end
     @test dipole_gsm ≈ [sin(μ), 0, cos(μ)]
 
     # Test CoordinateVector transformation
-    gsm = GSM(-5.1, 0.3, 2.8)
-    gsm_t = GSM(gsm, t)
+    gsm = [-5.1, 0.3, 2.8]
     sm = gsm2sm(gsm, t)
-    sm_geopack_true = SM(-2.9670092644479498, 0.3, 5.004683409035982, t)
+    sm_geopack_true = [-2.9670092644479498, 0.3, 5.004683409035982]
     @test sm ≈ sm_geopack_true rtol = 1.0e-7
-    @test SM(gsm_t) === SM(gsm, t) === gsm2sm(gsm, t)
+    @test sm2gsm(sm, t) ≈ gsm
     # Test roundtrip transformation
-    @test GSM(SM(gsm_t)) ≈ gsm_t
+    @test gsm2sm(sm2gsm(sm, t), t) ≈ sm
 end
 
 # The most expensive transformation
@@ -185,21 +174,20 @@ end
     using Dates
 
     t = DateTime(2001, 1, 1, 2, 3, 4)
-    mag = MAG(1.0, 2.0, 3.0, t)
+    mag = [1.0, 2.0, 3.0]
     sm = mag2sm(mag, t)
 
     @info @b mag2sm($mag, $t)
-    @test MAG(SM(mag)) ≈ mag
-    @test MAG(GEI(mag)) ≈ mag
+    @test sm2mag(sm, t) ≈ mag
+    @test gei2mag(mag2gei(mag, t), t) ≈ mag
 end
 
 @testitem "geo2sm" begin
     using Dates
 
     t = DateTime(2001, 1, 1, 2, 3, 4)
-    geo = GEO(1.0, 2.0, 3.0, t)
-    @test SM(geo) ≈ SM(GEI(geo))
-    @test GEO(SM(geo)) ≈ geo
+    geo = [1.0, 2.0, 3.0]
+    @test sm2geo(geo2sm(geo, t), t) ≈ geo
 end
 
 @testitem "rotation graph" begin
@@ -236,14 +224,12 @@ end
     x = [1.0, 2.0, 3.0]
     @test transform(GSM, GEI, x, t) ≈ R * x
 
-    # CoordinateVector: frame inferred, t inferred
-    gei = GEI(1.0, 2.0, 3.0, t)
-    gsm = transform(GSM, gei)
-    @test gsm isa CoordinateVector{GSM}
+    # CoordinateVector: frame inferred via internal vector type
+    gei = GeoCotrans.CoordinateVector{GEI, Cartesian3}(1.0, 2.0, 3.0)
+    gsm = transform(GSM, gei, t)
+    @test gsm isa GeoCotrans.CoordinateVector{GSM, Cartesian3}
     @test gsm ≈ gei2gsm(gei, t)
-    @test gsm.t == t
 
-    # CoordinateVector with explicit t override
     @test transform(GSM, gei, t) ≈ gsm
 
     # frame mismatch is caught
@@ -251,7 +237,7 @@ end
 
     # identity
     @test transform(GEI, GEI, x, t) ≈ x
-    @test transform(GEI, gei) ≈ gei
+    @test transform(GEI, gei, t) ≈ gei
 
     # matrix path: scalar time builds rotation once
     A = rand(3, 5)

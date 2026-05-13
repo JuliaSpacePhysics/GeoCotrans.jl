@@ -8,7 +8,7 @@ Geodetic coordinate system with:
 
 https://www.wikipedia.org/wiki/Geodetic_coordinates
 """
-GDZ(ϕ, λ, h = 0, t = nothing) = CoordinateVector{GEO, Geodetic}(ϕ, λ, h, t)
+GDZ(ϕ, λ, h = 0) = CoordinateVector{GEO, Geodetic}(ϕ, λ, h)
 GDZ() = GEO(), Geodetic()
 getcsys(::typeof(GDZ)) = GDZ()
 
