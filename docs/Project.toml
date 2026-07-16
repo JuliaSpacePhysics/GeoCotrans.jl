@@ -9,3 +9,6 @@ IRBEM = "d0b46c7b-8a8f-4d20-a1b4-6e9a4a1e4e5f"
 OrdinaryDiffEqTsit5 = "b1df2697-797e-41e3-8120-5422d3b24e4a"
 PySPEDAS = "668d2cef-03a7-4c36-a521-7d1c6ddc8846"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+CairoMakie = "0.15.13"
