@@ -16,3 +16,6 @@ TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 TsyganenkoModels = "14dfbe45-703c-4bf3-b096-15691adbb981"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[compat]
+Aqua = "0.8.16"
