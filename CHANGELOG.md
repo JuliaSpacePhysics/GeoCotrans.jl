@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-30
+
 ### Changed
 
 - **Breaking**: `transform(from => to, x, t)` and `rotation(from => to, t)` are the only public forms; positional `transform(To, From, x, t)` / `rotation(From, To, t)` removed.
@@ -16,6 +18,7 @@
 - **Breaking**: refactor!: seperate “Coordinate Representation and Reference Frame ([#20](https://github.com/JuliaSpacePhysics/GeoCotrans.jl/issues/20))
 
 
-[unreleased]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/releases/tag/v0.3.0
 [0.2.0]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/releases/tag/v0.2.0
 [0.1.1]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/releases/tag/v0.1.1

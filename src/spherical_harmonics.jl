@@ -3,24 +3,9 @@ using Bumper
 using SatelliteToolboxLegendre: legendre!
 
 """
-    evalsph(coeffs, r, θ, φ)
+    evalsph(coeffs, r, θ, φ) -> [B_r, B_θ, B_φ] (nanoTesla)
 
-Evaluate the magnetic field at a point in spherical coordinates.
-
-# Arguments
-- `coeffs`: The magnetic field coefficients
-- `r`: Radial distance in planetary radii (dimensionless)
-- `θ`: Colatitude in radians [0, π]
-- `φ`: East longitude in radians [0, 2π]
-
-# Returns
-- `SVector{3,Float64}`: Magnetic field vector [B_r, B_θ, B_φ] in nanoTesla
-
-# Coordinate System
-- Spherical coordinates (r, θ, φ) where:
-  - r: radial distance from planet center
-  - θ: colatitude (0 at north pole, π at south pole)
-  - φ: east longitude (0 at prime meridian, increases eastward)
+Evaluate the magnetic field at a point in spherical coordinates with magnetic field coefficients `coeffs`.
 
 # Mathematical Formulation
 The magnetic field is derived from the scalar potential:
@@ -39,10 +24,7 @@ B_φ = -\\frac{1}{r\\sin θ}\\frac{∂V}{∂φ}
     end
 end
 
-
-# Accessor for 2D arrays
 @inline get_coeff(G::AbstractMatrix, l, m) = G[l + 1, m + 1]
-
 # Accessor for 1D vectors with triangular indexing: k = l*(l+1)÷2 + 1 + m
 @inline get_coeff(G::AbstractVector, l, m) = G[l * (l + 1) ÷ 2 + 1 + m]
 
