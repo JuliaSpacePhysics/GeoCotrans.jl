@@ -19,6 +19,9 @@ get_mlt(x_geo, times) # Magnetic Local Time
 model = IGRF()
 B_gsm = model(x_gsm, times; from = GSM()) # nT
 
+using TsyganenkoModels
+model = TsyIGRF(T89(2)) # Kp level = 2
+
 using OrdinaryDiffEqTsit5, CairoMakie
 
 sol = trace(GEO(3.0, 0.0, 0.0), DateTime(2020, 1, 1), Tsit5()) # Trace from [3, 0, 0] Earth radii
@@ -27,11 +30,7 @@ plot(sol; idxs = (1, 2)) # Equatorial plane (X-Y)
 
 ## API
 
-Full API map with units and conventions: `@doc(GeoCotrans)`, or the [documentation](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/).
-
-- [Coordinate validation](https://juliaspacephysics.github.io/GeoCotrans.jl/dev/coords/) against IRBEM and PySPEDAS
-- [TsyganenkoModels.jl](https://github.com/JuliaSpacePhysics/TsyganenkoModels.jl) for external Tsyganenko magnetosphere models
-- [GeoAACGM.jl](https://github.com/JuliaSpacePhysics/GeoAACGM.jl) for AACGM coordinates
+Full API map with units and conventions: `@doc(GeoCotrans)`, or the [documentation](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/) (including [validation](https://juliaspacephysics.github.io/GeoCotrans.jl/dev/coords/) against IRBEM and PySPEDAS).
 
 ## Reference
 
@@ -40,6 +39,8 @@ Full API map with units and conventions: `@doc(GeoCotrans)`, or the [documentati
 
 ## Related packages
 
+- [TsyganenkoModels.jl](https://github.com/JuliaSpacePhysics/TsyganenkoModels.jl) for external Tsyganenko magnetosphere models
+- [GeoAACGM.jl](https://github.com/JuliaSpacePhysics/GeoAACGM.jl) for AACGM coordinates
 - [SatelliteToolboxGeomagneticField.jl](https://github.com/JuliaSpace/SatelliteToolboxGeomagneticField.jl) — IGRF-13 and dipole models (Julia)
 - [ppigrf](https://github.com/IAGA-VMOD/ppigrf) — pure Python IGRF
 - [geopack](https://github.com/tsssss/geopack) — Python IGRF + Tsyganenko
