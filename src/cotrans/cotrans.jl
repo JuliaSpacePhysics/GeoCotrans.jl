@@ -15,13 +15,14 @@ function rotation end
 rotation(::Type{F}, ::Type{F}, t) where {F} = LinearAlgebra.I
 
 """
-    transform(to, x, t)
-    transform(from=>to, x, t)
+    transform(to, from, x, t; dims = 2)
+    transform(from => to, x, t; dims = 2)
+    transform(to, x::CoordinateVector, t)
 
-Transform `x` to reference frame `to` at time(s) `t`. Omit `from` if it can be inferred`.
+Transform Cartesian `x` from reference frame `from` to `to` at time(s) `t`; frames are types (`GSM`, not `GSM()`).
+`from` can be omitted for `x::CoordinateVector` (e.g. `GEO(x, y, z)`).
 
-`x` may be a vector, or a matrix of stacked vectors paired with either
-a scalar `t` or a vector `ts` (per-sample).
+`x` may be a 3-vector, or a matrix of stacked vectors along `dims` paired with a single `t` or a per-sample vector of times.
 """
 function transform end
 

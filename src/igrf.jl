@@ -1,7 +1,8 @@
 using Bumper
 
+export IGRF
 export get_igrf_coeffs, get_igrf_coeffs!
-export IGRF, igrf, igrf_B
+export igrf, igrf_B
 
 include("igrf_coef.jl")
 
@@ -81,27 +82,30 @@ function igrf_Benu(𝐫, t)
 end
 
 """
-    IGRF(;)
+    IGRF()
 
-Load the International Geomagnetic Reference Field (IGRF) model.
+International Geomagnetic Reference Field (IGRF-14): Earth's main field with coefficients at 5-year epochs
+from 1965 to 2030, linearly interpolated in time. Valid for years 1965–2030 (errors outside).
 
-IGRF is a time-varying model of Earth's main magnetic field with coefficients at 5-year epochs from 1965 to 2030, linearly interpolated between epochs.
+    (m::IGRF)(𝐫, t; in, out, max_degree) -> B
+    (m::IGRF)(r, θ, φ, t; kw...)
+    (m::IGRF)(R::AbstractMatrix, times; dim = 2, kw...)
 
-By default the input coordinate system `in` is `(GEO(), Spherical())`.
+Magnetic field [nT] at position(s) `𝐫` and time(s) `t`.
+
+# Keyword Arguments
+- `in`: input coordinate system, a frame (`GSM()`), a `(frame, representation)` tuple.
+  Inferred from `𝐫` for `CoordinateVector`; defaults to `(GEO(), Spherical())`.
+- `out`: output coordinate system, defaults to `in`. Geodetic input yields `(Be, Bn, Bu)` in East-North-Up.
 
 # Examples
 ```julia
 m = IGRF()
-r, θ, φ = 1.0, deg2rad(45), deg2rad(45)
-t = DateTime("2021-03-28")
-m(r, θ, φ, t)
-
-# When input is in different coordinate system, specify `in` or decorate the input
-# By default, the output for GDZ input is (Be, Bn, Bu) in East-North-Up (ENU) frame
-lat, lon = 60.39299, 5.32415
-m2 = IGRF()
-m2(lat, lon, 0, t; in = GDZ())
-m(GDZ(lat, lon, 0), t)
+t = DateTime(2021, 3, 28)
+m(1.0, deg2rad(45), deg2rad(45), t)          # (Br, Bθ, Bφ) in spherical GEO
+m(GDZ(60.39, 5.32, 0), t)                     # (Be, Bn, Bu), same as m([60.39, 5.32, 0], t; in = GDZ())
+m(GSM(3.0, 0.0, 1.0), t)                      # Cartesian GSM in, Cartesian GSM out
+m(rand(3, 6), Date.(2015:2020); in = GSM())   # 3×6 matrix, one time per column
 ```
 """
 struct IGRF <: InternalFieldModel end
@@ -109,11 +113,5 @@ struct IGRF <: InternalFieldModel end
 getcsys(::IGRF) = GEO(), Spherical()
 evalmodel(::IGRF, r, θ, φ, t) = igrf_B(r, θ, φ, t)
 
-"""
-    igrf(𝐫, t; kw...) = IGRF()(𝐫, t; kw...)
-
-A convenience function for `IGRF()`.
-
-Calculate IGRF model given coordinate(s) `𝐫` at time(s) `t`.
-"""
+"""Alias for `IGRF()(args...; kw...)`; see [`IGRF`](@ref)."""
 igrf(args...; kw...) = IGRF()(args...; kw...)

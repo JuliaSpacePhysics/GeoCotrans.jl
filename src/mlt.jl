@@ -1,13 +1,13 @@
+# IRBEM implementation: https://github.com/IRBEM/IRBEM/blob/5c2c6c2/src/geo_tran.f
+
 φ(r) = (tmp = atan(r[2], r[1]); tmp < 0 ? tmp + 2π : tmp)
 
 """
     get_mlt(xGEO, time)
+    get_mlt(xGEO::AbstractMatrix, times; dim = 2)
 
-Compute magnetic local time (MLT) in hours in the range `[0, 24)`. 
-
-MLT is computed from the difference between the magnetic longitudes of the position and the subsolar direction in MAG coordinates.
-
-- [IRBEM implementation](https://github.com/IRBEM/IRBEM/blob/5c2c6c2/src/geo_tran.f)
+Magnetic local time in hours, `[0, 24)`, of Cartesian GEO position(s) `xGEO`.
+The matrix form slices along `dim` and broadcasts `times`.
 """
 @inline function get_mlt(xGEO, time)
     mlon_pos = φ(geo2mag(GEO(xGEO), time))

@@ -44,7 +44,7 @@ function FieldLineCallback end
 """
     trace(pos, t, solver; kwargs...) :: ODESolution
 
-Trace a magnetic field line using the specified SciML solver.
+Trace a magnetic field line through `pos` (Cartesian, Re) at time `t` with a SciML ODE `solver`, parameterized by arc length.
 
 # Keyword Arguments
 - `model = IGRF()`: Magnetic field model to use
@@ -57,8 +57,9 @@ Trace a magnetic field line using the specified SciML solver.
 
 # Example
 ```julia
-using GeoCotrans, OrdinaryDiffEqTsit5
-sol = trace([3.0, 0.0, 0.0], t, Tsit5())
+using GeoCotrans, OrdinaryDiffEqTsit5, Dates
+sol = trace(GEO(3.0, 0.0, 0.0), DateTime(2020, 1, 1), Tsit5())
+sol.u  # positions [Re] along the line; sol.t is arc length
 ```
 """
 function trace end
@@ -76,8 +77,8 @@ models, whose equator can lie beyond 10 Re.
 
 # Example
 ```julia
-using GeoCotrans, OrdinaryDiffEqTsit5
-eq = find_magequator(GEO(3.0, 0.0, 0.5), t, Tsit5())
+using GeoCotrans, OrdinaryDiffEqTsit5, Dates
+eq = find_magequator(GEO(3.0, 0.0, 0.5), DateTime(2020, 1, 1), Tsit5())
 eq.pos, eq.Bmin
 ```
 """

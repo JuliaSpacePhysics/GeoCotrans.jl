@@ -3,9 +3,11 @@ using StaticArrays: Size
 include("FieldModels/FieldModels.jl")
 
 """
-    CoordinateVector{F, R}
+    CoordinateVector{F, R}(x, y, z) <: FieldVector{3}
 
-3-element `FieldVector` in a specific coordinate frame `F` using representation `R`.
+`FieldVector` tagged with reference frame `F` and representation `R` (`Cartesian3` by default).
+
+`getcsys(v)` returns `(F(), R())`.
 """
 struct CoordinateVector{F, R, T} <: FieldVector{3, T}
     x::T
