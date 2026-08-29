@@ -50,23 +50,27 @@ description(@nospecialize T) = FrameDescriptions[nameof(T)]
 
 getcsys(::CoordinateVector{C, R}) where {C, R} = (C(), R())
 
-# get the reference frame
+# get the reference frame; types and instances are interchangeable
 frame(::Any) = nothing
 frame(::CoordinateVector{F}) where {F} = F()
-frame(in::AbstractReferenceFrame) = in
-frame(in::Tuple) = frame(in[1])
+frame(f::AbstractReferenceFrame) = f
+frame(::Type{F}) where {F <: AbstractReferenceFrame} = F()
+frame(csys::Tuple) = frame(csys[1])
+frametype(::Type{F}) where {F <: AbstractReferenceFrame} = F
+frametype(x) = typeof(frame(x))
 # get the coordinate representation
 representation(::Any) = nothing
-representation(in::Symbol) = if in == :spherical
+representation(s::Symbol) = if s == :spherical
     Spherical()
-elseif in == :cartesian
+elseif s == :cartesian
     Cartesian3()
-elseif in == :geodetic
+elseif s == :geodetic
     Geodetic()
 else
     nothing
 end
 representation(::AbstractReferenceFrame) = Cartesian3()
-representation(in::AbstractRepresentation) = in
+representation(::Type{<:AbstractReferenceFrame}) = Cartesian3()
+representation(r::AbstractRepresentation) = r
 representation(::CoordinateVector{F, R}) where {F, R} = R()
-representation(in::Tuple) = representation(in[2])
+representation(csys::Tuple) = representation(csys[2])

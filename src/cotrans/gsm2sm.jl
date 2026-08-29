@@ -2,7 +2,7 @@
 # Hapgood (1992): T4 = <-μ, Y> where μ is the dipole tilt angle
 
 """
-    rotation(GSM, SM, time)
+    rotation(GSM => SM, time)
 
 GSM → SM rotation: rotation around the shared Y-axis by the dipole tilt angle μ.
 """

@@ -22,7 +22,7 @@ Trace a magnetic field line through `pos` (Cartesian, Re) at time `t` with a Sci
 - `r0 = 1.0`: Inner radial boundary (Earth radii)
 - `rlim = 10.0`: Outer radial boundary (Earth radii)
 - `maxs = 100.0`: Maximum arc length for integration
-- `in = getcsys(pos)`: Input coordinate system (Reference frame and coordinate representation)
+- `from = getcsys(pos)`: Input coordinate system (Reference frame and coordinate representation)
 - `callback = nothing`: extra SciML callback(s), combined with the boundary callbacks; `u` is in the model's native frame
 - Additional keyword arguments are passed to `solve()`
 

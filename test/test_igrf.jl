@@ -54,8 +54,8 @@ end
     @info @b $igrf_B($r, $θ, $φ, $t), $model($r, $θ, $φ, $t)
 
     # Cartesian output
-    @test model(r, θ, φ, t; out = :cartesian) ≈ sph2car(B, [r, θ, φ])
-    @test (@b $model($r, $θ, $φ, $t; out = :cartesian)).allocs == 0
+    @test model(r, θ, φ, t; to = :cartesian) ≈ sph2car(B, [r, θ, φ])
+    @test (@b $model($r, $θ, $φ, $t; to = :cartesian)).allocs == 0
 
     r, θ, φ = 1, 45, 45  # r in Re
     @test igrf_Bd(r, θ, φ, t) ≈ B_true
@@ -67,7 +67,7 @@ end
         @test igrf_Benu(𝐫, t) ≈ B_true
         @test model(𝐫, t) ≈ B_true
         gdz_array = [𝐫;; 𝐫]
-        @test model(gdz_array, [t, t]; in = GDZ()) ≈ [B_true B_true]
+        @test model(gdz_array, [t, t]; from = GDZ()) ≈ [B_true B_true]
         # igrf_Benu(𝐫, t) bypass conversion using Cartesian so should be faster
         @info @b igrf_Benu($𝐫, $t), $model($𝐫, $t)
     end
@@ -83,7 +83,7 @@ end
         # Test (GSM, Spherical) input
         rθφ = car2sph(r)
         in_csys = (GSM(), Spherical())
-        @test model(rθφ, t; in = in_csys) == model(rθφ, t; in = in_csys, out = in_csys)
-        @test model(rθφ, t; in = in_csys) ≈ car2sph(B_true, r)
+        @test model(rθφ, t; from = in_csys) == model(rθφ, t; from = in_csys, to = in_csys)
+        @test model(rθφ, t; from = in_csys) ≈ car2sph(B_true, r)
     end
 end

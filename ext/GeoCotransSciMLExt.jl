@@ -7,14 +7,14 @@ using LinearAlgebra: LinearAlgebra, normalize, norm
 import GeoCotrans: trace, find_magequator
 
 # Integrate in the model's native frame (Cartesian) so the per-call frame rotation is computed once
-function native_field(model, pos, t, in)
+function native_field(model, pos, t, from)
     SV3 = SVector{3,Float64}
     f_model = getcsys(model)[1]
-    f_in = @something frame(in) f_model
-    R = rotation(typeof(f_model), typeof(f_in), t)
+    f_from = @something frame(from) f_model
+    R = rotation(f_model => f_from, t)
     u0 = SV3(R' * SV3(pos))
     csys = (f_model, Cartesian3())
-    B = r -> SV3(model(r, t; in=csys, out=csys))
+    B = r -> SV3(model(r, t; from=csys, to=csys))
     return u0, B, R
 end
 
@@ -44,14 +44,14 @@ function trace(
     pos, t, solver;
     model=IGRF(),
     dir=1,
-    in=getcsys(pos),
+    from=getcsys(pos),
     r0=1.0,
     rlim=10.0,
     maxs=100.0,
     callback=nothing,
     kwargs...
 )
-    u0, B, R = native_field(model, pos, t, in)
+    u0, B, R = native_field(model, pos, t, from)
     prob = ODEProblem(field_line_ode, u0, (0.0, maxs), (B, sign(dir)))
     callback = CallbackSet(boundary_callback(r0, rlim), callback)
     sol = solve(prob, solver; callback, kwargs...)
@@ -62,8 +62,8 @@ function trace(
     return sol
 end
 
-function find_magequator(pos, t, solver; model=IGRF(), in=getcsys(pos), r0=1.0, rlim=10.0, maxs=100.0, kw...)
-    u0, B, R = native_field(model, pos, t, in)
+function find_magequator(pos, t, solver; model=IGRF(), from=getcsys(pos), r0=1.0, rlim=10.0, maxs=100.0, kw...)
+    u0, B, R = native_field(model, pos, t, from)
     dBds = let B = B, ε = 1.0e-6
         u -> (Bu=B(u); nb=norm(Bu); (norm(B(u + (ε / nb) * Bu)) - nb) / ε)
     end

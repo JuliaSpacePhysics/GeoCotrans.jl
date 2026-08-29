@@ -28,15 +28,13 @@ abstract type CompositeFieldModel <: MagneticFieldModel end
 
 function evalmodel end
 
-@inline function (m::MagneticFieldModel)(𝐫, t = nothing; in = nothing, out = nothing, kw...)
+@inline function (m::MagneticFieldModel)(𝐫, t = nothing; from = nothing, to = nothing, kw...)
     model_csys = getcsys(m)
-    in_frame = @something frame(𝐫) frame(in) model_csys[1]
-    in_repr = @something representation(𝐫) representation(in) model_csys[2]
-    in_csys = (in_frame, in_repr)
-    out_frame = @something frame(out) in_csys[1]
-    out_repr = @something representation(out) in_csys[2]
-    out = (out_frame, out_repr)
-    return evaluate_model(m, 𝐫, t, in_csys, model_csys, out; kw...)
+    from_frame = @something frame(𝐫) frame(from) model_csys[1]
+    from_repr = @something representation(𝐫) representation(from) model_csys[2]
+    from_csys = (from_frame, from_repr)
+    to_csys = (@something(frame(to), from_frame), @something(representation(to), from_repr))
+    return evaluate_model(m, 𝐫, t, from_csys, model_csys, to_csys; kw...)
 end
 
 # Static evaluation (3 positional arguments)
@@ -60,12 +58,12 @@ _scale_pos(::Spherical, pos, s) = SVector{3, Float64}(pos[1] * s, pos[2], pos[3]
 _scale_pos(::Cartesian3, pos, s) = SVector{3, Float64}(pos[1] * s, pos[2] * s, pos[3] * s)
 
 # Evaluate a model with automatic coordinate transformation.
-function evaluate_model(model, pos, t, in, model_csys, out; scale = nothing, kw...)
-    pos_scaled = isnothing(scale) ? pos : _scale_pos(in[2], pos, scale)
+function evaluate_model(model, pos, t, from, model_csys, to; scale = nothing, kw...)
+    pos_scaled = isnothing(scale) ? pos : _scale_pos(from[2], pos, scale)
     # Transform input position to model's native system
-    model_pos = transform_position(in..., model_csys..., pos_scaled, t)
+    model_pos = transform_position(from..., model_csys..., pos_scaled, t)
     # Evaluate model
     B = evalmodel(model, model_pos..., t; kw...)
     # Transform field to output system
-    return transform_field(model_csys..., out..., B, model_pos, t)
+    return transform_field(model_csys..., to..., B, model_pos, t)
 end

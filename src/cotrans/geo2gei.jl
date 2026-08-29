@@ -1,7 +1,7 @@
 # https://pyspedas.readthedocs.io/en/latest/coords.html#pyspedas.cotrans_tools.cotrans_lib.subgeo2gei
 
 """
-    rotation(GEI, GEO, gst_or_time)
+    rotation(GEI => GEO, gst_or_time)
 
 GEI → GEO rotation. Accepts either Greenwich sidereal time `gst` (radians) or
 an `AbstractTime` from which `gst` is derived.

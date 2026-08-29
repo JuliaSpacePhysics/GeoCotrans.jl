@@ -87,25 +87,25 @@ end
 International Geomagnetic Reference Field (IGRF-14): Earth's main field with coefficients at 5-year epochs
 from 1965 to 2030, linearly interpolated in time. Valid for years 1965–2030 (errors outside).
 
-    (m::IGRF)(𝐫, t; in, out, max_degree) -> B
+    (m::IGRF)(𝐫, t; from, to, max_degree) -> B
     (m::IGRF)(r, θ, φ, t; kw...)
     (m::IGRF)(R::AbstractMatrix, times; dim = 2, kw...)
 
 Magnetic field [nT] at position(s) `𝐫` and time(s) `t`.
 
 # Keyword Arguments
-- `in`: input coordinate system, a frame (`GSM()`), a `(frame, representation)` tuple.
+- `from`: input coordinate system, a frame (`GSM`/`GSM()`) or a `(frame, representation)` tuple.
   Inferred from `𝐫` for `CoordinateVector`; defaults to `(GEO(), Spherical())`.
-- `out`: output coordinate system, defaults to `in`. Geodetic input yields `(Be, Bn, Bu)` in East-North-Up.
+- `to`: output coordinate system, defaults to `from`. Geodetic input yields `(Be, Bn, Bu)` in East-North-Up.
 
 # Examples
 ```julia
 m = IGRF()
 t = DateTime(2021, 3, 28)
 m(1.0, deg2rad(45), deg2rad(45), t)          # (Br, Bθ, Bφ) in spherical GEO
-m(GDZ(60.39, 5.32, 0), t)                     # (Be, Bn, Bu), same as m([60.39, 5.32, 0], t; in = GDZ())
+m(GDZ(60.39, 5.32, 0), t)                     # (Be, Bn, Bu), same as m([60.39, 5.32, 0], t; from = GDZ())
 m(GSM(3.0, 0.0, 1.0), t)                      # Cartesian GSM in, Cartesian GSM out
-m(rand(3, 6), Date.(2015:2020); in = GSM())   # 3×6 matrix, one time per column
+m(rand(3, 6), Date.(2015:2020); from = GSM())   # 3×6 matrix, one time per column
 ```
 """
 struct IGRF <: InternalFieldModel end

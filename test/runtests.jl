@@ -71,7 +71,7 @@ end
     @test gsm_da[Ti = 1] ≈ expected_gsm rtol = 1.0e-6
 
     @testset "model evaluation for DimArray" begin
-        @test_nowarn igrf(gsm_da; in = (GSM(), Cartesian3()), scale = 1 / 6371.2)
+        @test_nowarn igrf(gsm_da; from = (GSM(), Cartesian3()), scale = 1 / 6371.2)
     end
 end
 
@@ -113,7 +113,7 @@ end
 
     # Test that dipole direction in MAG is along Z-axis
     dipole_geo = calc_dipole_geo(t)
-    dipole_mag = rotation(GEO, MAG, t) * dipole_geo
+    dipole_mag = rotation(GEO => MAG, t) * dipole_geo
     @test dipole_mag ≈ [0, 0, 1]
 
     # Test CoordinateVector transformation
@@ -148,9 +148,9 @@ end
     using GeoCotrans: dipole_tilt, calc_dipole_gei
 
     t = DateTime(2001, 1, 1, 2, 3, 4)
-    M = rotation(GSM, SM, t)
+    M = rotation(GSM => SM, t)
     # Test that dipole in GSM transforms to Z-axis in SM
-    dipole_gsm = rotation(GEI, GSM, t) * calc_dipole_gei(t)
+    dipole_gsm = rotation(GEI => GSM, t) * calc_dipole_gei(t)
     dipole_sm = M * dipole_gsm
     @test dipole_sm ≈ [0, 0, 1]
     # Verify dipole tilt angle is consistent with dipole in GSM
@@ -197,19 +197,19 @@ end
     t = DateTime(2001, 1, 1, 2, 3, 4)
 
     # identity
-    @test rotation(GEI, GEI, t) == I
-    @test rotation(GSM, GSM, t) == I
+    @test rotation(GEI => GEI, t) == I
+    @test rotation(GSM => GSM, t) == I
 
     # inverse via transpose round-trips to identity (direct edges)
     for (F1, F2) in ((GEI, GSM), (GSE, GSM), (GEO, MAG), (GSM, SM), (GEI, GEO))
-        R = rotation(F1, F2, t)
-        @test R * rotation(F2, F1, t) ≈ I
-        @test rotation(F2, F1, t) ≈ transpose(R)
+        R = rotation(F1 => F2, t)
+        @test R * rotation(F2 => F1, t) ≈ I
+        @test rotation(F2 => F1, t) ≈ transpose(R)
     end
 
     # all chain pairs round-trip to identity
     for (F1, F2) in ((GEI, SM), (GEO, GSM), (GEO, SM), (GEI, MAG), (SM, MAG))
-        @test rotation(F1, F2, t) * rotation(F2, F1, t) ≈ I
+        @test rotation(F1 => F2, t) * rotation(F2 => F1, t) ≈ I
     end
 end
 
@@ -218,45 +218,42 @@ end
     using LinearAlgebra
 
     t = DateTime(2001, 1, 1, 2, 3, 4)
-    R = rotation(GEI, GSM, t)
+    R = rotation(GEI => GSM, t)
 
-    # raw vector with explicit (to, from)
     x = [1.0, 2.0, 3.0]
-    @test transform(GSM, GEI, x, t) ≈ R * x
+    @test transform(GEI => GSM, x, t) ≈ R * x
+    # frames as instances are equivalent to types
+    @test rotation(GEI() => GSM(), t) == R
+    @test transform(GEI() => GSM, x, t) ≈ R * x
 
     # CoordinateVector: frame inferred via internal vector type
     gei = GeoCotrans.CoordinateVector{GEI, Cartesian3}(1.0, 2.0, 3.0)
     gsm = transform(GSM, gei, t)
     @test gsm isa GeoCotrans.CoordinateVector{GSM, Cartesian3}
     @test gsm ≈ gei2gsm(gei, t)
-
-    @test transform(GSM, gei, t) ≈ gsm
+    @test transform(GEI => GSM, gei, t) ≈ gsm
+    @test transform(GEI => GSM(), gei, t) isa GeoCotrans.CoordinateVector{GSM, Cartesian3}
 
     # frame mismatch is caught
-    @test_throws AssertionError transform(GSM, GSE, gei, t)
+    @test_throws AssertionError transform(GSE => GSM, gei, t)
 
     # identity
-    @test transform(GEI, GEI, x, t) ≈ x
+    @test transform(GEI => GEI, x, t) ≈ x
     @test transform(GEI, gei, t) ≈ gei
 
     # matrix path: scalar time builds rotation once
     A = rand(3, 5)
-    @test transform(GSM, GEI, A, t) ≈ R * A
+    @test transform(GEI => GSM, A, t) ≈ R * A
 
     # matrix path: per-sample times
     ts = [t + Hour(i) for i in 0:4]
-    B = transform(GSM, GEI, A, ts; dims = 2)
+    B = transform(GEI => GSM, A, ts; dims = 2)
     @test B ≈ gei2gsm(A, ts; dims = 2)
 
     # matrix path: dims = 1
     A1 = permutedims(A)
-    @test transform(GSM, GEI, A1, ts; dims = 1) ≈ permutedims(B)
-
-    # Pair syntax: from=>to
-    @test transform(GEI => GSM, x, t) ≈ transform(GSM, GEI, x, t)
-    @test transform(GEI => GSM, gei, t) ≈ gsm
-    @test transform(GEI => GSM, A, t) ≈ R * A
-    @test transform(GEI => GSM, A, ts; dims = 2) ≈ B
+    @test transform(GEI => GSM, A1, ts; dims = 1) ≈ permutedims(B)
+    @test transform(GEI => GSM, A1, ts; dim = 1) ≈ permutedims(B)
 end
 
 @testitem "Aqua" begin

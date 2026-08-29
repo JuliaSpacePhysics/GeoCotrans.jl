@@ -29,7 +29,7 @@ Transformations between geocentric reference frames, IGRF-14 geomagnetic field, 
 
 ## Geomagnetic field
 
-- [`IGRF`](@ref)`()`: IGRF-14 model, called as `model(𝐫, t; in, out)`.
+- [`IGRF`](@ref)`()`: IGRF-14 model, called as `model(𝐫, t; from, to)`.
 - [`get_mlt`](@ref)`(xGEO, t)`: magnetic local time [h].
 
 ## Field line tracing

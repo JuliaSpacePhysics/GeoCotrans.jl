@@ -2,24 +2,21 @@
 export rotation, transform
 
 """
-    rotation(from::Type{<:AbstractReferenceFrame}, to::Type{<:AbstractReferenceFrame}, t)
+    rotation(from => to, t)
 
-Rotation matrix taking vectors from `from` to `to` reference frame at time `t`.
-
-Frames are passed as types (e.g. `rotation(GEI, GSM, t)`).
-
-Direct edges (`GEI↔GEO`, `GEI↔GSM`, `GSE↔GSM`, `GEO↔MAG`, `GSM↔SM`) are defined per pair; remaining pairs compose through hub frames. Inverses are obtained via `transpose`.
+Rotation matrix taking vectors from reference frame `from` to `to` at time `t`, e.g. `rotation(GEI() => GSM(), t)`.
 """
 function rotation end
+# types (`GEI => GSM`) also work at a literal call site, but `Pair{DataType,DataType}` can cause dynamic dispatch once stored in a variable or passed through a function boundary.
 
-rotation(::Type{F}, ::Type{F}, t) where {F} = LinearAlgebra.I
+rotation(::Type{F}, ::Type{F}, ::Any) where {F} = LinearAlgebra.I
+@inline rotation(p::Pair, t) = rotation(frametype(p.first), frametype(p.second), t)
 
 """
-    transform(to, from, x, t; dims = 2)
     transform(from => to, x, t; dims = 2)
     transform(to, x::CoordinateVector, t)
 
-Transform Cartesian `x` from reference frame `from` to `to` at time(s) `t`; frames are types (`GSM`, not `GSM()`).
+Transform Cartesian `x` from reference frame `from` to `to` at time(s) `t`, e.g. `transform(GEO() => GSM(), x, t)`.
 `from` can be omitted for `x::CoordinateVector` (e.g. `GEO(x, y, z)`).
 
 `x` may be a 3-vector, or a matrix of stacked vectors along `dims` paired with a single `t` or a per-sample vector of times.
@@ -77,32 +74,28 @@ for chain in chains
     @eval rotation(::Type{$(chain[3])}, ::Type{$(chain[1])}, t) = transpose(rotation($(chain[1]), $(chain[3]), t))
 end
 
-# ── transform methods (canonical: type-form) ──────────────────────────────────
+# ── transform methods ─────────────────────────────────────────────────────────
 
-@inline transform(To, x::CoordinateVector{F}, t) where {F} =
-    transform(To, F, x, t)
+@inline transform(To, x::CoordinateVector{F}, t) where {F} = transform(F => To, x, t)
 
-@inline function transform(To, From, x::CoordinateVector{F}, t) where {F}
-    @assert F == From
-    return To((rotation(From, To, t) * x)...)
+@inline function transform(p::Pair, x::CoordinateVector{F}, t) where {F}
+    @assert F == frametype(p.first)
+    return frametype(p.second)((rotation(p, t) * x)...)
 end
 
-@inline transform(p::Pair, x, t; kw...) = transform(p.second, p.first, x, t; kw...)
-@inline transform(p::Pair, x::CoordinateVector, t) = transform(p.second, p.first, x, t)
-
-@inline transform(To, From, x, t) = rotation(From, To, t) * x
+@inline transform(p::Pair, x, t) = rotation(p, t) * x
 
 # matrix paths: vector ts is per-sample, anything else is a scalar time
-@inline function transform(To, From, A::AbstractMatrix, ts::AbstractVector; dim = nothing, dims = nothing)
+@inline function transform(p::Pair, A::AbstractMatrix, ts::AbstractVector; dim=nothing, dims=nothing)
     dims = @something dim dims 2
     return stack(eachslice(A; dims), ts; dims) do x, t
-        rotation(From, To, t) * x
+        rotation(p, t) * x
     end
 end
 
-@inline function transform(To, From, A::AbstractMatrix, t; dim = nothing, dims = nothing)
+@inline function transform(p::Pair, A::AbstractMatrix, t; dim=nothing, dims=nothing)
     dims = @something dim dims 2
-    R = rotation(From, To, t)
+    R = rotation(p, t)
     return dims == 2 ? R * A : transpose(R * transpose(A))
 end
 
@@ -115,10 +108,10 @@ for p in coord_pairs
 
     Transforms coordinate(s) `x` from $(coord_text[p[1]]) to $(coord_text[p[2]]) reference frame at time(s) `t`.
 
-    Equivalent to [`transform`](@ref)`($T2, $T1, x, t)`.
+    Equivalent to [`transform`](@ref)`($T1 => $T2, x, t)`.
     """
     @eval @doc $doc $func
-    @eval @inline $func(x, t; kw...) = transform($T2, $T1, x, t; kw...)
+    @eval @inline $func(x, t; kw...) = transform($T1 => $T2, x, t; kw...)
     @eval export $func
 end
 

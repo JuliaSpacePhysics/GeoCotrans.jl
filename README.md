@@ -13,11 +13,11 @@ using GeoCotrans, Dates
 times = Date.(2015:2020)
 x_geo = rand(3, 6)
 
-x_gsm = geo2gsm(x_geo, times) # equivalent to transform(GSM, GEO, x_geo, times)
+x_gsm = geo2gsm(x_geo, times) # equivalent to transform(GEO() => GSM(), x_geo, times)
 get_mlt(x_geo, times) # Magnetic Local Time
 
 model = IGRF()
-B_gsm = model(x_gsm, times; in = GSM()) # nT
+B_gsm = model(x_gsm, times; from = GSM()) # nT
 
 using OrdinaryDiffEqTsit5, CairoMakie
 

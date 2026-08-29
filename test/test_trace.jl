@@ -6,13 +6,13 @@
 
     @testset "Tracing in both directions" begin
         pos = [3.0, 0.0, 0.5]
-        in = (GEO(), Cartesian3())
+        from = (GEO(), Cartesian3())
 
         # Trace parallel to B
-        sol_fwd = trace(pos, t, Tsit5(); dir = 1, in)
+        sol_fwd = trace(pos, t, Tsit5(); dir = 1, from)
 
         # Trace anti-parallel to B
-        sol_bwd = trace(pos, t, Tsit5(); dir = -1, in)
+        sol_bwd = trace(pos, t, Tsit5(); dir = -1, from)
 
         # Both should reach inner boundary for dipole-like field
         r_fwd_end = norm(sol_fwd.u[end])
@@ -93,7 +93,7 @@ end
     t = DateTime(2020, 1, 1)
     pos = GEO(3.0, 0.5, 1.2)
     eq = find_magequator(pos, t, Tsit5())
-    @test norm(igrf(eq.pos, t; in = GEO())) ≈ eq.Bmin
+    @test norm(igrf(eq.pos, t; from = GEO())) ≈ eq.Bmin
     ref = IRBEM.find_magequator(t, collect(pos), "GEO", (;); kext = 0)
     @test eq.pos ≈ ref.XGEO rtol = 1.0e-3
     @test eq.Bmin ≈ ref.Bmin rtol = 1.0e-3
@@ -106,7 +106,7 @@ end
     model = TsyIGRF()
     tt = DateTime(2001, 1, 1, 2, 3, 4)
     eq = find_magequator(GSM(-4.0, 0.0, 0.5), tt, Tsit5(); model)
-    Bmag(r) = norm(model(r, tt; in = GSM(), out = GSM()))
+    Bmag(r) = norm(model(r, tt; from = GSM(), to = GSM()))
     @test Bmag(eq.pos) ≈ eq.Bmin
     for dir in (1, -1)
         sol = trace(eq.pos, tt, Tsit5(); model, dir, maxs = 0.3)

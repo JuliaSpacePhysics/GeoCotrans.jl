@@ -1,5 +1,5 @@
 """
-    rotation(GEO, MAG, time)
+    rotation(GEO => MAG, time)
 
 GEO → MAG rotation following Hapgood (1992) / UCL `geo_tran` convention:
 

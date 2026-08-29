@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking**: `transform(from => to, x, t)` and `rotation(from => to, t)` are the only public forms; positional `transform(To, From, x, t)` / `rotation(From, To, t)` removed.
+- **Breaking**: field-model and `trace`/`find_magequator` keywords `in`/`out` renamed to `from`/`to`.
+- Frames are instances (`GSM()`); types (`GSM`) still accepted, see `rotation` docstring for the caveat.
+
 ## [0.2.0] - 2026-01-29
 
 ### Changed
