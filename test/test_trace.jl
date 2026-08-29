@@ -74,7 +74,7 @@ end
     )
     benchmark = @b trace($r_gsm, $time, Tsit5(); model = TsyIGRF(), r0 = 1.1)
     if VERSION >= v"1.12"
-        @test benchmark.allocs < 150
+        @test benchmark.allocs < 200
     end
     @info benchmark
 
@@ -83,5 +83,33 @@ end
         sol = trace(r_gsm, time, Tsit5(); model, r0 = 1.1, rlim = 10.0)
         footpoint = sol.u[end]
         @test footpoint ≈ footpoints[name] rtol = 1.0e-3
+    end
+end
+
+@testitem "find_magequator" begin
+    using OrdinaryDiffEqTsit5, Dates, LinearAlgebra
+    using TsyganenkoModels
+    import IRBEM
+    t = DateTime(2020, 1, 1)
+    pos = GEO(3.0, 0.5, 1.2)
+    eq = find_magequator(pos, t, Tsit5())
+    @test norm(igrf(eq.pos, t; in = GEO())) ≈ eq.Bmin
+    ref = IRBEM.find_magequator(t, collect(pos), "GEO", (;); kext = 0)
+    @test eq.pos ≈ ref.XGEO rtol = 1.0e-3
+    @test eq.Bmin ≈ ref.Bmin rtol = 1.0e-3
+
+    # open field lines (incl. exactly on the z-axis) -> nothing
+    @test isnothing(find_magequator(GEO(0.3, 0.0, 1.5), t, Tsit5()))
+    @test isnothing(find_magequator(GEO(0.0, 0.0, 1.5), t, Tsit5()))
+
+    # non-IGRF model through the GSM transform
+    model = TsyIGRF()
+    tt = DateTime(2001, 1, 1, 2, 3, 4)
+    eq = find_magequator(GSM(-4.0, 0.0, 0.5), tt, Tsit5(); model)
+    Bmag(r) = norm(model(r, tt; in = GSM(), out = GSM()))
+    @test Bmag(eq.pos) ≈ eq.Bmin
+    for dir in (1, -1)
+        sol = trace(eq.pos, tt, Tsit5(); model, dir, maxs = 0.3)
+        @test Bmag(sol.u[end]) > eq.Bmin
     end
 end

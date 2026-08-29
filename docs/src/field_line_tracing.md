@@ -127,4 +127,5 @@ fig
 FieldLineProblem
 FieldLineCallback
 trace
+find_magequator
 ```

@@ -78,7 +78,7 @@ import SpaceDataModel: getcsys
 export Spherical, Cartesian3, Geodetic, GDZ, gdz2sph
 export CoordinateVector, getcsys
 export get_mlt
-export FieldLineProblem, FieldLineCallback, trace
+export FieldLineProblem, FieldLineCallback, trace, find_magequator
 
 include("info.jl")
 include("constants.jl")

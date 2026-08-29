@@ -5,11 +5,11 @@ Requires loading SciML ODE solver package (e.g., `OrdinaryDiffEqTsit5`) before u
 
 ## API
 
-- [`trace`](@ref), [`FieldLineProblem`](@ref), [`FieldLineCallback`](@ref)
+- [`trace`](@ref), [`find_magequator`](@ref), [`FieldLineProblem`](@ref), [`FieldLineCallback`](@ref)
 """
 module FieldLineTracing
 
-export FieldLineProblem, FieldLineCallback, trace
+export FieldLineProblem, FieldLineCallback, trace, find_magequator
 
 """
     FieldLineProblem(pos, tspan, t; model=IGRF(), dir=1)
@@ -62,4 +62,24 @@ sol = trace([3.0, 0.0, 0.0], t, Tsit5())
 ```
 """
 function trace end
+
+"""
+    find_magequator(pos, t, solver; kwargs...) -> (; pos, Bmin, s) or nothing
+
+Find the magnetic equator, the |B| minimum along the field line through `pos`. Traces
+downhill in |B| and stops at the root of d|B|/ds (a `ContinuousCallback`), so the result is
+the nearest local minimum; `s` is the signed arc length from `pos` (positive along B).
+Returns `nothing` if a boundary (`r0`, `rlim`, `maxs`) is reached first (open field line).
+
+Keyword arguments are those of [`trace`](@ref); raise `rlim` for nightside lines in external
+models, whose equator can lie beyond 10 Re.
+
+# Example
+```julia
+using GeoCotrans, OrdinaryDiffEqTsit5
+eq = find_magequator(GEO(3.0, 0.0, 0.5), t, Tsit5())
+eq.pos, eq.Bmin
+```
+"""
+function find_magequator end
 end

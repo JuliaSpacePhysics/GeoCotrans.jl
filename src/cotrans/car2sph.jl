@@ -20,7 +20,7 @@ function car2sph(x::T, y::T, z::T) where {T}
     if r < 1.0e-10  # At origin
         return zero(SVector{3, T})
     end
-    θ = acos(clamp(z / r, -1.0, 1.0))  # Colatitude [0, π]
+    θ = atan(hypot(x, y), z)  # Colatitude [0, π]
     φ = atan(y, x)  # Longitude [-π, π]
     # Normalize φ to [0, 2π]
     (φ < 0) && (φ += 2π)
@@ -75,7 +75,7 @@ function car2sph(Bx, By, Bz, x, y, z)
     r < 1.0e-10 && return SA[Bz, 0.0, 0.0]  # At origin
 
     ρ = sqrt(x^2 + y^2)
-    θ = acos(clamp(z / r, -1.0, 1.0))
+    θ = atan(ρ, z)
     sinθ, cosθ = sincos(θ)
     sinφ = y / ρ
     cosφ = x / ρ

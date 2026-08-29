@@ -99,3 +99,28 @@ Depends on the transformation, Julia's implementation is about 10-40 times faste
 ```@example coords
 @b gse2gsm($jl_tha_pos_gse), irbem_cotrans($jl_tha_pos_gse, "GSE", "GSM"), pyspedas.cotrans("tha_pos_gse", "tha_pos_new_gsm", coord_in="GSE", coord_out="GSM")
 ```
+
+## Field line tracing and magnetic equator
+
+[`find_magequator`](@ref) traces the field line through a point and locates the |B| minimum, matching IRBEM's `find_magequator` (IGRF only).
+
+```@example coords
+using OrdinaryDiffEqTsit5, Dates
+t = DateTime(2020, 1, 1)
+pos = GEO(3.0, 0.5, 1.2)
+x = collect(pos)
+jl_eq = find_magequator(pos, t, Tsit5())
+ir_eq = IRBEM.find_magequator(t, x, "GEO", (;); kext = 0)
+@test jl_eq.pos ≈ ir_eq.XGEO rtol = 1e-3
+@test jl_eq.Bmin ≈ ir_eq.Bmin rtol = 1e-3
+```
+
+Finding the equator costs about the same as IRBEM; tracing a whole field line is much faster in Julia.
+
+```@example coords
+@b find_magequator($pos, $t, Tsit5()), IRBEM.find_magequator($t, $x, "GEO", (;); kext = 0)
+```
+
+```@example coords
+@b trace($pos, $t, Tsit5()), IRBEM.trace_field_line($t, $x, "GEO", (;); kext = 0)
+```
