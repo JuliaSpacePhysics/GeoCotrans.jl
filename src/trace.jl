@@ -5,41 +5,11 @@ Requires loading SciML ODE solver package (e.g., `OrdinaryDiffEqTsit5`) before u
 
 ## API
 
-- [`trace`](@ref), [`find_magequator`](@ref), [`FieldLineProblem`](@ref), [`FieldLineCallback`](@ref)
+- [`trace`](@ref), [`find_magequator`](@ref)
 """
 module FieldLineTracing
 
-export FieldLineProblem, FieldLineCallback, trace, find_magequator
-
-"""
-    FieldLineProblem(pos, tspan, t; model=IGRF(), dir=1)
-
-Create an ODEProblem for tracing a magnetic field line in `model` at time `t`.
-
-- `dir::Int = 1`: Tracing direction (+1 for parallel to B, -1 for anti-parallel)
-
-# Example
-```julia
-using GeoCotrans, OrdinaryDiffEqTsit5, Dates
-
-t = DateTime(2020, 1, 1)
-pos = [3.0, 0.0, 0.0]
-prob = FieldLineProblem(pos, (0.0, 50.0), t)
-sol = solve(prob, Tsit5())
-```
-"""
-function FieldLineProblem end
-
-"""
-    FieldLineCallback(; r0=1.0, rlim=10.0)
-
-Create a callback for terminating field line integration at boundaries.
-
-# Keyword Arguments
-- `r0 = 1.0`: Inner radial boundary (Earth radii)
-- `rlim = 10.0`: Outer radial boundary (Earth radii)
-"""
-function FieldLineCallback end
+export trace, find_magequator
 
 """
     trace(pos, t, solver; kwargs...) :: ODESolution
@@ -53,6 +23,7 @@ Trace a magnetic field line through `pos` (Cartesian, Re) at time `t` with a Sci
 - `rlim = 10.0`: Outer radial boundary (Earth radii)
 - `maxs = 100.0`: Maximum arc length for integration
 - `in = getcsys(pos)`: Input coordinate system (Reference frame and coordinate representation)
+- `callback = nothing`: extra SciML callback(s), combined with the boundary callbacks; `u` is in the model's native frame
 - Additional keyword arguments are passed to `solve()`
 
 # Example

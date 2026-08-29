@@ -124,8 +124,6 @@ fig
 ## API Reference
 
 ```@docs; canonical=false
-FieldLineProblem
-FieldLineCallback
 trace
 find_magequator
 ```

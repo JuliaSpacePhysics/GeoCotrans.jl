@@ -38,7 +38,6 @@ Requires an OrdinaryDiffEq solver package to be loaded (e.g. `using OrdinaryDiff
 
 - [`trace`](@ref)`(pos, t, solver; model, dir, r0, rlim, maxs)`: integrate a field line.
 - [`find_magequator`](@ref)`(pos, t, solver)`: |B| minimum along the field line.
-- [`FieldLineProblem`](@ref), [`FieldLineCallback`](@ref): building blocks for custom `solve` calls.
 
 ## References
 
@@ -55,7 +54,7 @@ import SpaceDataModel: getcsys
 export Spherical, Cartesian3, Geodetic, GDZ, gdz2sph
 export CoordinateVector, getcsys
 export get_mlt
-export FieldLineProblem, FieldLineCallback, trace, find_magequator
+export trace, find_magequator
 
 include("info.jl")
 include("constants.jl")
