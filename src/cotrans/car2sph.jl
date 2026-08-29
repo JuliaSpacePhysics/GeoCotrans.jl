@@ -55,9 +55,10 @@ Convert spherical coordinates to Cartesian coordinates, with angles in degrees.
 sphd2car(r, θ, φ) = sph2car(r, deg2rad(θ), deg2rad(φ))
 
 """
-Calculates cartesian field components from spherical ones
+    sph2car(Br, Bθ, Bφ, r, θ, φ) -> (Bx, By, Bz)
+    sph2car(B, rθφ)
 
-`theta` and `phi` are spherical angles of the point in radians
+Convert spherical vector components at position `(r, θ, φ)` (radians) to Cartesian. Inverse: `car2sph(B, xyz)`.
 """
 function sph2car(br, btheta, bphi, _, theta, phi)
     st, ct = sincos(theta)

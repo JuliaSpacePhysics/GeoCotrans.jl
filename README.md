@@ -16,7 +16,8 @@ x_geo = rand(3, 6)
 x_gsm = geo2gsm(x_geo, times) # equivalent to transform(GSM, GEO, x_geo, times)
 get_mlt(x_geo, times) # Magnetic Local Time
 
-B_gsm = igrf(x_gsm, times; in = GSM())
+model = IGRF()
+B_gsm = model(x_gsm, times; in = GSM()) # nT
 
 using OrdinaryDiffEqTsit5, CairoMakie
 
@@ -24,32 +25,18 @@ sol = trace(GEO(3.0, 0.0, 0.0), DateTime(2020, 1, 1), Tsit5()) # Trace from [3, 
 plot(sol; idxs = (1, 2)) # Equatorial plane (X-Y)
 ```
 
-## API Map
+## API
 
-- Reference Frames Types:
-  - `GEI`, `GEO`, `GSE`, `GSM`, `MAG`, `SM`, `GDZ`
-- Coordinate transforms `transform(to, from, pos, time)`
-  - Utility functions (each has inverse `b2a`)
-    - `geo2gei`, `geo2gsm`, `geo2mag`
-    - `gei2gsm`, `gse2gsm`, `gsm2sm`
-    - `gei2sm`, `geo2sm`, `gei2mag`
+Full API map with units and conventions: `@doc(GeoCotrans)`, or the [documentation](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/).
 
-See [documentation](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/) for full signatures
-- [Coordinate validation](https://juliaspacephysics.github.io/GeoCotrans.jl/dev/coords/) for comparing coordinate transformations with IRBEM and PySPEDAS
+- [Coordinate validation](https://juliaspacephysics.github.io/GeoCotrans.jl/dev/coords/) against IRBEM and PySPEDAS
 - [TsyganenkoModels.jl](https://github.com/JuliaSpacePhysics/TsyganenkoModels.jl) for external Tsyganenko magnetosphere models
 - [GeoAACGM.jl](https://github.com/JuliaSpacePhysics/GeoAACGM.jl) for AACGM coordinates
-
-## Conventions
-
-- GDZ(lat, lon, alt) uses geodetic latitude and longitude in degrees, altitude in kilometers.
-- Other inputs use radius in Earth radii and angles in radians.
 
 ## Reference
 
 - [SSC Appendix C — Description of Coordinate Systems](https://sscweb.gsfc.nasa.gov/users_guide/Appendix_C.shtml)
-- [Coordinate transformations between geocentric systems](https://www.mssl.ucl.ac.uk/grid/iau/extra/local_copy/SP_coords/geo_tran.htm)
 - [SPEDAS.jl — Coordinates explanation](https://beforerr.github.io/SPEDAS.jl/dev/explanations/coords/)
-- [IAGA / NOAA NCEI — IGRF](https://www.ncei.noaa.gov/products/international-geomagnetic-reference-field)
 
 ## Related packages
 

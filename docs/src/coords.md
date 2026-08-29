@@ -106,10 +106,11 @@ Depends on the transformation, Julia's implementation is about 10-40 times faste
 
 ```@example coords
 using OrdinaryDiffEqTsit5, Dates
+using GeoCotrans: GEO
 t = DateTime(2020, 1, 1)
 pos = GEO(3.0, 0.5, 1.2)
 x = collect(pos)
-jl_eq = find_magequator(pos, t, Tsit5())
+jl_eq = GeoCotrans.find_magequator(pos, t, Tsit5())
 ir_eq = IRBEM.find_magequator(t, x, "GEO", (;); kext = 0)
 @test jl_eq.pos ≈ ir_eq.XGEO rtol = 1e-3
 @test jl_eq.Bmin ≈ ir_eq.Bmin rtol = 1e-3
@@ -118,7 +119,7 @@ ir_eq = IRBEM.find_magequator(t, x, "GEO", (;); kext = 0)
 Finding the equator costs about the same as IRBEM; tracing a whole field line is much faster in Julia.
 
 ```@example coords
-@b find_magequator($pos, $t, Tsit5()), IRBEM.find_magequator($t, $x, "GEO", (;); kext = 0)
+@b GeoCotrans.find_magequator($pos, $t, Tsit5()), IRBEM.find_magequator($t, $x, "GEO", (;); kext = 0)
 ```
 
 ```@example coords
