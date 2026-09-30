@@ -52,7 +52,9 @@ function trace(
     kwargs...
 )
     u0, B, R = native_field(model, pos, t, from)
-    prob = ODEProblem(field_line_ode, u0, (0.0, maxs), (B, sign(dir)))
+    # FullSpecialize: DiffEqBase >= 7.21.2 type-erases callbacks of AutoSpecialize problems
+    # and calls them via invokelatest (~3x allocations per trace)
+    prob = ODEProblem{false,SciMLBase.FullSpecialize}(field_line_ode, u0, (0.0, maxs), (B, sign(dir)))
     callback = CallbackSet(boundary_callback(r0, rlim), callback)
     sol = solve(prob, solver; callback, kwargs...)
     if R !== LinearAlgebra.I
@@ -74,7 +76,7 @@ function find_magequator(pos, t, solver; model=IGRF(), from=getcsys(pos), r0=1.0
     # interp_points=2 since |B| extrema are ~Re apart, far coarser than the steps
     equator = ContinuousCallback((u, s, integrator) -> dir * dBds(u), terminate!, nothing; interp_points=2)
     callback = CallbackSet(boundary_callback(r0, rlim), equator)
-    prob = ODEProblem(field_line_ode, u0, (0.0, maxs), (B, dir))
+    prob = ODEProblem{false,SciMLBase.FullSpecialize}(field_line_ode, u0, (0.0, maxs), (B, dir))
     sol = solve(prob, solver; callback, save_everystep=false, kw...)
     u, s = sol.u[end], sol.t[end]
     abs(dBds(u)) > 1.0e-6 * norm(B(u)) && return nothing  # stopped at r0/rlim/maxs, not at a minimum
