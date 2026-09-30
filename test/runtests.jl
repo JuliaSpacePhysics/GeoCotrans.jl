@@ -1,19 +1,19 @@
+using Pkg
+# prereleases often have no installable JET.
+const RUN_JET_TESTS = isempty(VERSION.prerelease)
+RUN_JET_TESTS && Pkg.add("JET")
+
 using Test
 using TestItems, TestItemRunner
-@run_package_tests
+@run_package_tests filter = ti -> RUN_JET_TESTS || !(:jet in ti.tags)
 
 # https://github.com/spedas/pyspedas/blob/master/pyspedas/cotrans_tools/tests/test_cotrans.py
 # https://github.com/tsssss/geopack/blob/master/geopack/test_geopack1.py
 
-const RUN_JET_TESTS = isempty(VERSION.prerelease)
-
-if RUN_JET_TESTS
-    using Pkg; Pkg.add("JET"); Pkg.instantiate()
-    @testitem "JET static analysis" begin
-        using JET
-        @test_call GeoCotrans.workload()
-        @test_opt GeoCotrans.workload()
-    end
+@testitem "JET static analysis" tags = [:jet] begin
+    using JET
+    @test_call GeoCotrans.workload()
+    @test_opt GeoCotrans.workload()
 end
 
 @testitem "Frames and Representations" begin
