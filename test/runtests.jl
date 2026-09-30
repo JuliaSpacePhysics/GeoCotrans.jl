@@ -5,15 +5,10 @@ using TestItems, TestItemRunner
 # https://github.com/spedas/pyspedas/blob/master/pyspedas/cotrans_tools/tests/test_cotrans.py
 # https://github.com/tsssss/geopack/blob/master/geopack/test_geopack1.py
 
-const RUN_JET_TESTS = isempty(VERSION.prerelease)
-
-if RUN_JET_TESTS
-    using Pkg; Pkg.add("JET"); Pkg.instantiate()
-    @testitem "JET static analysis" begin
-        using JET
-        @test_call GeoCotrans.workload()
-        @test_opt GeoCotrans.workload()
-    end
+@testitem "JET static analysis" begin
+    using JET
+    @test_call GeoCotrans.workload()
+    @test_opt GeoCotrans.workload()
 end
 
 @testitem "Frames and Representations" begin
