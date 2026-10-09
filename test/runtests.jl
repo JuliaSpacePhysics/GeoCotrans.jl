@@ -65,6 +65,10 @@ end
     expected_gsm = [775.0, 11.70357713, -7.93890939]
     @test gsm_da[Ti = 1] ≈ expected_gsm rtol = 1.0e-6
 
+    # scalar time with a dimension type selecting the second dimension
+    daT = permutedims(da)
+    @test gse2gsm(daT, t; dim = Ti) ≈ permutedims(gse2gsm(da, t; dim = Ti))
+
     @testset "model evaluation for DimArray" begin
         @test_nowarn igrf(gsm_da; from = (GSM(), Cartesian3()), scale = 1 / 6371.2)
     end
@@ -249,6 +253,7 @@ end
     A1 = permutedims(A)
     @test transform(GEI => GSM, A1, ts; dims = 1) ≈ permutedims(B)
     @test transform(GEI => GSM, A1, ts; dim = 1) ≈ permutedims(B)
+    @test transform(GEI => GSM, A, Ref(t)) ≈ R * A
 end
 
 @testitem "Aqua" begin

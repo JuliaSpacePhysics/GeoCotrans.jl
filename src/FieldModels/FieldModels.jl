@@ -42,17 +42,9 @@ end
     return m(SA[r, θ, φ], t; kw...)
 end
 
-@inline function (m::MagneticFieldModel)(r::AbstractMatrix{T}, times; dim = ndims(r), kw...) where {T}
-    odim = 3 - dim
-    @assert size(r, odim) == 3
-    arr = similar(r)
-    for i in eachindex(times)
-        r_in = SVector{3, T}(selectdim(r, dim, i))
-        slc_out = selectdim(arr, dim, i)
-        slc_out .= m(r_in, times[i]; kw...)
-    end
-    return arr
-end
+@inline (m::MagneticFieldModel)(A::AbstractMatrix; dim = nothing, kw...) = m(A, times(A, dim); dim, kw...)
+@inline (m::MagneticFieldModel)(A::AbstractMatrix, ts; dim = nothing, kw...) = mapsamples(_evaluator(m, kw), A, ts; dim = _sampledim(A, dim))
+_evaluator(m, kw) = (x, t) -> m(SVector{3}(x), t; kw...)
 
 _scale_pos(::Spherical, pos, s) = SVector{3, Float64}(pos[1] * s, pos[2], pos[3])
 _scale_pos(::Cartesian3, pos, s) = SVector{3, Float64}(pos[1] * s, pos[2] * s, pos[3] * s)

@@ -4,7 +4,7 @@ Transformations between geocentric reference frames, IGRF-14 geomagnetic field, 
 ## Conventions
 
 - Positions: Cartesian `(x, y, z)` in Earth radii (`R🜨 = 6371.2 km`); spherical `(r [Re], θ colatitude [rad], φ east longitude [rad])`; [`GDZ`](@ref) `(lat [deg], lon [deg], alt [km])`.
-- Batched input: a `3×N` matrix (`dims = 2`, default) with one `t` for all columns or a length-`N` vector of times.
+- Batched input: a `3×N` matrix (`dim = 2`, default) with one `t` for all columns or a length-`N` vector of times, or a time-keyed matrix (e.g. `DimArray`) alone.
 
 ## Reference frames
 
@@ -49,6 +49,7 @@ using Dates
 using Dates: AbstractTime
 using LinearAlgebra
 using StaticArrays
+using TimeseriesUtilities: dimnum, mapsamples, tdimnum, times
 using SpaceDataModel: AbstractReferenceFrame, AbstractRepresentation, Spherical, Cartesian3, Geodetic
 import SpaceDataModel: getcsys
 export Spherical, Cartesian3, Geodetic, GDZ, gdz2sph

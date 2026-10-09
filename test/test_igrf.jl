@@ -68,6 +68,7 @@ end
         @test model(𝐫, t) ≈ B_true
         gdz_array = [𝐫;; 𝐫]
         @test model(gdz_array, [t, t]; from = GDZ()) ≈ [B_true B_true]
+        @test model(gdz_array, t; from = GDZ()) ≈ [B_true B_true]
         # igrf_Benu(𝐫, t) bypass conversion using Cartesian so should be faster
         @info @b igrf_Benu($𝐫, $t), $model($𝐫, $t)
     end

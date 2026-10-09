@@ -4,10 +4,9 @@
 
 """
     get_mlt(xGEO, time)
-    get_mlt(xGEO::AbstractMatrix, times; dim = 2)
+    get_mlt(xGEO::AbstractMatrix, [times]; dim)
 
 Magnetic local time in hours, `[0, 24)`, of Cartesian GEO position(s) `xGEO`.
-The matrix form slices along `dim` and broadcasts `times`.
 """
 @inline function get_mlt(xGEO, time)
     mlon_pos = φ(geo2mag(GEO(xGEO), time))
@@ -20,7 +19,6 @@ The matrix form slices along `dim` and broadcasts `times`.
     return mod(mlt, 24)
 end
 
-@inline function get_mlt(xGEO::AbstractMatrix, times; dim = 2)
-    out = similar(xGEO, axes(xGEO, dim))
-    return out .= get_mlt.(eachslice(xGEO; dims = dim), times)
-end
+get_mlt(xGEO::AbstractMatrix; dim = nothing) = get_mlt(xGEO, times(xGEO, dim); dim)
+get_mlt(xGEO::AbstractMatrix, times; dim = nothing) = mapsamples(_mlt, xGEO, times; dim = _sampledim(xGEO, dim))
+_mlt(x, t) = get_mlt(SVector{3}(x), t)
