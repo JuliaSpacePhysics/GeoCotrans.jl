@@ -52,7 +52,7 @@ struct LinearInterp{T, N, A <: AbstractArray{T, N}, B <: AbstractArray{T, N}, R}
 end
 
 Base.size(li::LinearInterp) = size(li.base)
-@inline Base.getindex(li::LinearInterp, i::Int...) = @inbounds li.delta[i...] * li.ratio + li.base[i...]
+@inline Base.getindex(li::LinearInterp, i::Int...) = @inbounds muladd(li.delta[i...], li.ratio, li.base[i...])
 
 """
     get_igrf_coeffs(time)
