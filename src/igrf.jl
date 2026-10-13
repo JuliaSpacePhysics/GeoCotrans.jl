@@ -19,35 +19,6 @@ end
     return year0, ratio
 end
 
-function igrf_V(r, θ::Tθ, φ::Tφ, t; max_degree = nothing) where {Tθ, Tφ}
-    max_degree = something(max_degree, IGRF_degree)
-    return @no_escape begin
-        Plms = @alloc(Tθ, max_degree + 1, max_degree + 1)
-        legendre!(Val(:schmidt), Plms, θ, max_degree)
-        g = @alloc(Float64, coeff_size(max_degree))
-        h = @alloc(Float64, coeff_size(max_degree))
-        get_igrf_coeffs!(g, h, t)
-        sincos_mφs = @alloc(Tuple{Tφ, Tφ}, max_degree + 1)
-        for m in eachindex(sincos_mφs)
-            sincos_mφs[m] = sincos((m - 1) * φ)
-        end
-        V = 0
-        @inbounds for l in 1:max_degree
-            k0 = l * (l + 1) ÷ 2 + 1
-            Vl = 0
-            for m in 0:l
-                k = k0 + m
-                Pₗₘ = Plms[l + 1, m + 1]
-                sin_mφ, cos_mφ = sincos_mφs[m + 1]
-                Vl += Pₗₘ * (g[k] * cos_mφ + h[k] * sin_mφ)
-            end
-            V += (1 / r)^(l + 1) * Vl
-        end
-        V
-    end
-end
-
-
 """
     igrf_B(r, θ, φ, t; max_degree=IGRF_degree) -> (Br, Bθ, Bφ)
 
@@ -56,7 +27,6 @@ at time `t`, where `r` is the radius, `θ` the colatitude, and `φ` the longitud
 """
 function igrf_B(r, θ, φ, t; max_degree = nothing)
     max_degree = something(max_degree, IGRF_degree)
-    θ = clamp(θ, 1.0e-8, π - 1.0e-8)
     return @no_escape begin
         g = @alloc(Float64, coeff_size(max_degree))
         h = @alloc(Float64, coeff_size(max_degree))
