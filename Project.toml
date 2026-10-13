@@ -14,23 +14,22 @@ PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 SatelliteToolboxLegendre = "7fa26607-a272-47b2-9aa2-a6c1d419d9d2"
 SpaceDataModel = "0b37b92c-f0c5-4a52-bd5c-390dec20857c"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+TimeseriesUtilities = "31d49243-0742-49c1-b8d2-db113b74581e"
 
 [weakdeps]
-DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [extensions]
-GeoCotransDimensionalDataExt = "DimensionalData"
 GeoCotransSciMLExt = "SciMLBase"
 
 [compat]
 Bumper = "0.7"
 Dates = "1"
-DimensionalData = "0.29, 0.30"
 LinearAlgebra = "1"
 PrecompileTools = "1"
 SatelliteToolboxLegendre = "1.1"
 SciMLBase = "2, 3"
-SpaceDataModel = "0.2.4, 0.3, 0.4"
+SpaceDataModel = "0.2.4, 0.3, 0.4, 0.5"
 StaticArrays = "1"
+TimeseriesUtilities = "0.3"
 julia = "1.10"

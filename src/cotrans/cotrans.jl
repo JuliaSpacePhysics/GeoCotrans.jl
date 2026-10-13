@@ -13,13 +13,14 @@ rotation(::Type{F}, ::Type{F}, ::Any) where {F} = LinearAlgebra.I
 @inline rotation(p::Pair, t) = rotation(frametype(p.first), frametype(p.second), t)
 
 """
-    transform(from => to, x, t; dims = 2)
+    transform(from => to, x, [t]; dim = 2)
+    transform(from => to, A; dim)
     transform(to, x::CoordinateVector, t)
 
 Transform Cartesian `x` from reference frame `from` to `to` at time(s) `t`, e.g. `transform(GEO() => GSM(), x, t)`.
 `from` can be omitted for `x::CoordinateVector` (e.g. `GEO(x, y, z)`).
 
-`x` may be a 3-vector, or a matrix of stacked vectors along `dims` paired with a single `t` or a per-sample vector of times.
+`x` may be a 3-vector, or a matrix of stacked vectors along `dim` paired with optional single `t` or a per-sample vector of times.
 """
 function transform end
 
@@ -85,19 +86,26 @@ end
 
 @inline transform(p::Pair, x, t) = rotation(p, t) * x
 
-# matrix paths: vector ts is per-sample, anything else is a scalar time
-@inline function transform(p::Pair, A::AbstractMatrix, ts::AbstractVector; dim=nothing, dims=nothing)
-    dims = @something dim dims 2
-    return stack(eachslice(A; dims), ts; dims) do x, t
-        rotation(p, t) * x
-    end
+# matrix path: `t` follows broadcast rules as in `mapsamples`
+@inline function transform(p::Pair, A::AbstractMatrix, t; dim=nothing, dims=nothing)
+    dim = _sampledim(A, @something dim dims Some(nothing))
+    bt = Base.broadcastable(t)
+    isempty(axes(bt)) || return mapsamples(_rotate(p), A, bt; dim)
+    R = rotation(p, bt[])
+    return dim == 2 ? R * A : transpose(R * transpose(A))
 end
 
-@inline function transform(p::Pair, A::AbstractMatrix, t; dim=nothing, dims=nothing)
-    dims = @something dim dims 2
-    R = rotation(p, t)
-    return dims == 2 ? R * A : transpose(R * transpose(A))
-end
+# plain matrices stack samples as columns; keyed containers (e.g. DimArray) declare their time dimension.
+# Resolved to an index so callers can compare it against integers.
+_sampledim(A, dim) = dimnum(A, dim)
+_sampledim(A, ::Nothing) = something(tdimnum(A), 2)
+
+# containers carrying their own times (e.g. DimArray, KeyedArray)
+@inline transform(p::Pair, A::AbstractMatrix; dim=nothing) = transform(p, A, times(A, dim); dim)
+
+# barrier: a `Pair` of frame types would dispatch dynamically on every sample
+_rotate(p::Pair) = _rotate(frame(p.first), frame(p.second))
+_rotate(from, to) = (x, t) -> rotation(from => to, t) * SVector{3}(x)
 
 coord_type(s::Symbol) = Symbol(uppercase(string(s)))
 for p in coord_pairs
@@ -111,7 +119,7 @@ for p in coord_pairs
     Equivalent to [`transform`](@ref)`($T1 => $T2, x, t)`.
     """
     @eval @doc $doc $func
-    @eval @inline $func(x, t; kw...) = transform($T1 => $T2, x, t; kw...)
+    @eval @inline $func(args...; kw...) = transform($T1 => $T2, args...; kw...)
     @eval export $func
 end
 

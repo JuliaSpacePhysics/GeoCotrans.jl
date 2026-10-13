@@ -89,7 +89,7 @@ from 1965 to 2030, linearly interpolated in time. Valid for years 1965–2030 (e
 
     (m::IGRF)(𝐫, t; from, to, max_degree) -> B
     (m::IGRF)(r, θ, φ, t; kw...)
-    (m::IGRF)(R::AbstractMatrix, times; dim = 2, kw...)
+    (m::IGRF)(R::AbstractMatrix, [times]; dim, kw...)
 
 Magnetic field [nT] at position(s) `𝐫` and time(s) `t`.
 
