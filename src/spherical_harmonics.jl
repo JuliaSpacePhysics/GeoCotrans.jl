@@ -45,7 +45,7 @@ const SCHMIDT_RECURRENCE = SchmidtRecurrence(NTuple{3, Float64}[])
 
 @inline function schmidt_recurrence(n)
     table = @atomic SCHMIDT_RECURRENCE.table
-    return length(table) < (n + 1) * (n + 2) ÷ 2 ? grow_schmidt_recurrence!(n) : table
+    return length(table) < coeff_size(n) ? grow_schmidt_recurrence!(n) : table
 end
 
 @noinline function grow_schmidt_recurrence!(n)

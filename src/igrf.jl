@@ -1,5 +1,3 @@
-using Bumper
-
 export IGRF
 export get_igrf_coeffs, get_igrf_coeffs!
 export igrf, igrf_B
@@ -27,12 +25,8 @@ at time `t`, where `r` is the radius, `θ` the colatitude, and `φ` the longitud
 """
 function igrf_B(r, θ, φ, t; max_degree = nothing)
     max_degree = something(max_degree, IGRF_degree)
-    return @no_escape begin
-        g = @alloc(Float64, coeff_size(max_degree))
-        h = @alloc(Float64, coeff_size(max_degree))
-        get_igrf_coeffs!(g, h, t)
-        evalsph((; g, h), r, θ, φ, max_degree)
-    end
+    g, h = get_igrf_coeffs(t)
+    return evalsph((; g, h), r, θ, φ, max_degree)
 end
 
 igrf_Bd(r, θ, φ, t; kw...) = igrf_B(r, deg2rad(θ), deg2rad(φ), t; kw...)
