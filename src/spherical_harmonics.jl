@@ -15,13 +15,20 @@ B_φ = -\\frac{1}{r\\sin θ}\\frac{∂V}{∂φ}
 ```
 """
 @inline function evalsph(coeffs, r, θ, φ, max_degree, max_order = max_degree)
+    G, H = coeffs.g, coeffs.h
+    check_coeffs(G, max_degree, min(max_order, max_degree))
+    check_coeffs(H, max_degree, min(max_order, max_degree))
     tab = schmidt_recurrence(max_degree)
-    return _evalsph(tab, coeffs.g, coeffs.h, float.(promote(r, θ, φ))..., max_degree, max_order)
+    return _evalsph(tab, G, H, float.(promote(r, θ, φ))..., max_degree, max_order)
 end
 
 Base.@propagate_inbounds get_coeff(G::AbstractMatrix, l, m) = G[l + 1, m + 1]
 # Accessor for 1D vectors with triangular indexing: k = l*(l+1)÷2 + 1 + m
 Base.@propagate_inbounds get_coeff(G::AbstractVector, l, m) = G[l * (l + 1) ÷ 2 + 1 + m]
+
+# `_evalsph` reads coefficients @inbounds; these check the largest (l, m) it reads.
+check_coeffs(G::AbstractMatrix, n, m) = checkbounds(G, n + 1, m + 1)
+check_coeffs(G::AbstractVector, n, m) = checkbounds(G, n * (n + 1) ÷ 2 + 1 + m)
 
 # (α, γ, s) at (l, m), stored in the triangular layout of `get_coeff`, for the Schmidt
 # semi-normalized recursion Pₗ₊₁ᵐ = α cos θ Pₗᵐ - γ Pₗ₋₁ᵐ, with s = √(l² - m²).
