@@ -9,34 +9,41 @@
     @test length(h) == 105
 end
 
-@testitem "IGRF calculation (V and B)" begin
+@testitem "evalsph is -∇V" begin
     using Dates
     using ForwardDiff
-    using GeoCotrans.StaticArrays
-    using GeoCotrans: igrf_V, igrf_B
+    using SatelliteToolboxLegendre: legendre
+    using GeoCotrans: evalsph, get_coeff
 
-    function _igrf_B(r, θ, φ, t; kws...)
-        θ = clamp(θ, 1.0e-8, π - 1.0e-8)  # Avoid division by zero at poles
-        x = SA[r, θ, φ]
-        f(x) = igrf_V(x[1], x[2], x[3], t; kws...)
-        dV = ForwardDiff.gradient(f, x)
-        Br = -dV[1]
-        Bθ = -dV[2] / r
-        Bφ = -dV[3] / (r * sin(θ))
-        return SA[Br, Bθ, Bφ]
+    # Reference independent of evalsph's fused recursion: V from SatelliteToolboxLegendre, differentiated by AD
+    function V(G, H, (r, θ, φ), n, mmax)
+        P = legendre(Val(:schmidt), θ, n)
+        return sum(
+            (1 / r)^(l + 1) * P[l + 1, m + 1] * (get_coeff(G, l, m) * cos(m * φ) + get_coeff(H, l, m) * sin(m * φ))
+                for l in 1:n for m in 0:min(l, mmax)
+        )
+    end
+    function B_ref(G, H, r, θ, φ, n, mmax = n)
+        dV = ForwardDiff.gradient(x -> V(G, H, x, n, mmax), [r, θ, φ])
+        return [-dV[1], -dV[2] / r, -dV[3] / (r * sin(θ))]
     end
 
-    r, θ, φ = 1.0, deg2rad(45), deg2rad(45)
-    t = Date(2015)
-    @test _igrf_B(r, θ, φ, t) ≈ igrf_B(r, θ, φ, t)
-
-    using Chairmarks
-    @info @b _igrf_B($r, $θ, $φ, $t), igrf_B($r, $θ, $φ, $t)
+    g, h = get_igrf_coeffs(Date(2015))
+    G, H = randn(31, 31), randn(31, 31)
+    for r in (1.0, 2.5), θ in (1.0e-6, 0.3, π / 4, 2.0, π - 1.0e-6), φ in (0.0, 1.0, 4.0)
+        @test evalsph((; g, h), r, θ, φ, 13) ≈ B_ref(g, h, r, θ, φ, 13)
+        @test evalsph((; g = G, h = H), r, θ, φ, 30, 7) ≈ B_ref(G, H, r, θ, φ, 30, 7)
+    end
+    # At the poles B_θ, B_φ are the limits along the meridian φ
+    for φ in (0.0, 1.0)
+        @test evalsph((; g, h), 1.0, 0.0, φ, 13) ≈ evalsph((; g, h), 1.0, 1.0e-9, φ, 13)
+        @test evalsph((; g, h), 1.0, π, φ, 13) ≈ evalsph((; g, h), 1.0, π - 1.0e-9, φ, 13)
+    end
 end
 
 @testitem "IGRF calculation" begin
     using Dates
-    using GeoCotrans: IGRF, R🜨, igrf_V, igrf_B, igrf_Benu, igrf_Bd
+    using GeoCotrans: IGRF, R🜨, igrf_B, igrf_Benu, igrf_Bd
     using GeoCotrans: Spherical, car2sph, sph2car
     using Chairmarks
 

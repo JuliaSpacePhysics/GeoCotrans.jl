@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `evalsph` and IGRF evaluation are ~2.5× faster.
+- `evalsph` at the exact poles (θ = 0, π) returns the limit along the meridian; previously B_θ and B_φ were wrong there.
+
 ## [0.3.0] - 2026-08-30
 
 ### Changed
