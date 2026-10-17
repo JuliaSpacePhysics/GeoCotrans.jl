@@ -110,7 +110,12 @@ struct LinearInterp{T, N, A <: AbstractArray{T, N}, B <: AbstractArray{T, N}, R}
 end
 
 Base.size(li::LinearInterp) = size(li.base)
-@inline Base.getindex(li::LinearInterp, i::Int...) = @inbounds muladd(li.delta[i...], li.ratio, li.base[i...])
+@inline function Base.getindex(li::LinearInterp, i::Int...)
+    @boundscheck checkbounds(li, i...)
+    return @inbounds muladd(li.delta[i...], li.ratio, li.base[i...])
+end
+
+coeff_size(degree) = (degree + 1) * (degree + 2) ÷ 2
 
 # maximum degree and order
 _degree(g::AbstractMatrix) = size(g, 1) - 1
@@ -126,6 +131,12 @@ Schmidt semi-normalized Gauss coefficients; `c[n, m]` returns `(; g, h)`.
 struct GaussCoefficients{A}
     g::A
     h::A
+    function GaussCoefficients(g::A, h::A) where {A}
+        size(g) == size(h) || throw(DimensionMismatch("g has size $(size(g)), h has size $(size(h))"))
+        g isa AbstractVector && length(g) != coeff_size(_degree(g)) &&
+            throw(ArgumentError("packed coefficient length $(length(g)) is not (n + 1)(n + 2)/2 for any degree n"))
+        return new{A}(g, h)
+    end
 end
 
 function Base.getindex(c::GaussCoefficients, n::Int, m::Int)
@@ -149,7 +160,7 @@ function TimeVaryingGaussCoefficients(epochs::Vector, coefficients::Vector)
     length(epochs) == length(coefficients) || error("number of epochs must match number of coefficient sets")
     length(epochs) >= 2 || error("at least two epochs are required")
     issorted(epochs) || error("epochs must be sorted")
-    all(c -> size(c.g) == size(c.h) == size(first(coefficients).g), coefficients) || error("coefficient sets must have the same size")
+    allequal(size(c.g) for c in coefficients) || error("coefficient sets must have the same size")
     deltas = [GaussCoefficients(c1.g - c0.g, c1.h - c0.h) for (c0, c1) in zip(coefficients, @view coefficients[2:end])]
     return TimeVaryingGaussCoefficients(epochs, coefficients, deltas)
 end
@@ -186,6 +197,8 @@ function SphericalHarmonicModel(name, coeffs; radius, frame, degree = nothing, o
     g = _first_coeffs(coeffs).g
     degree = @something degree _degree(g)
     order = min(@something(order, _order(g)), degree)
+    0 <= degree <= _degree(g) && 0 <= order <= _order(g) ||
+        throw(ArgumentError("degree $degree and order $order exceed the coefficients' degree $(_degree(g)) and order $(_order(g))"))
     return SphericalHarmonicModel(String(name), coeffs, radius, degree, order, frame)
 end
 
@@ -200,6 +213,6 @@ _coeffs_at(c::TimeVaryingGaussCoefficients, t) = c(t)
 
 function Base.show(io::IO, m::SphericalHarmonicModel)
     print(io, "SphericalHarmonicModel(name=", m.name, ", radius=", m.radius, ", degree=", m.degree, ", order=", m.order)
-    m.coeffs isa TimeVaryingGaussCoefficients && print(io, ", epochs=", first(m.coeffs.epochs), "-", last(m.coeffs.epochs))
+    m.coeffs isa TimeVaryingGaussCoefficients && print(io, ", epochs=", first(m.coeffs.epochs), " to ", last(m.coeffs.epochs))
     return print(io, ")")
 end

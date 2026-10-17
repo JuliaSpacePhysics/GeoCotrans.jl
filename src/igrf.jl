@@ -37,7 +37,7 @@ end
 International Geomagnetic Reference Field (IGRF-14): Earth's main field with coefficients at 5-year epochs
 from 1965 to 2030, linearly interpolated in time. Valid for years 1965–2030 (errors outside).
 
-    (m::IGRF)(𝐫, t; from, to, max_degree) -> B
+    (m::IGRF)(𝐫, t; from, to) -> B
     (m::IGRF)(r, θ, φ, t; kw...)
     (m::IGRF)(R::AbstractMatrix, [times]; dim, kw...)
 

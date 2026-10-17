@@ -30,7 +30,6 @@ Transformations between geocentric reference frames, IGRF-14 geomagnetic field, 
 ## Geomagnetic field
 
 - [`IGRF`](@ref)`()`: IGRF-14 model, called as `model(𝐫, t; from, to)`.
-- [`SphericalHarmonicModel`](@ref)`(name, coeffs; radius, frame)`: internal field model from Gauss coefficients.
 - [`get_mlt`](@ref)`(xGEO, t)`: magnetic local time [h].
 
 ## Field line tracing

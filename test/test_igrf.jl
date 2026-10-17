@@ -35,6 +35,8 @@ end
     @test packed.coeffs[4, 2] == matrix.coeffs[4, 2] == (g = G[5, 3], h = H[5, 3])
     @test_throws BoundsError matrix.coeffs[14, 0]
     @test_throws BoundsError packed.coeffs[1, 2]
+    @test_throws BoundsError IGRF_COEFFS(DateTime(2020))[14, 0]
+    @test_throws ArgumentError GaussCoefficients(g[2:end], h[2:end])
     B = igrf_B(1.0, 0.7, 2.0, Date(2015))
     @test packed(1.0, 0.7, 2.0) ≈ B
     @test matrix(1.0, 0.7, 2.0) ≈ B
