@@ -1,10 +1,10 @@
 using LinearAlgebra
 
 """
-    evalsph(coeffs, r, θ, φ, max_degree, max_order = max_degree) -> [B_r, B_θ, B_φ] (nanoTesla)
+    evalsph(coeffs, r, θ, φ, max_degree, max_order = max_degree) -> [B_r, B_θ, B_φ]
 
-Evaluate the magnetic field at a point in spherical coordinates with Schmidt semi-normalized Gauss
-coefficients `coeffs.g`, `coeffs.h`; `r` is in units of the model's reference radius.
+Evaluate the magnetic field at a point in spherical coordinates with
+Schmidt semi-normalized Gauss coefficients `coeffs.g`, `coeffs.h`; `r` is in units of the model's reference radius.
 
 # Mathematical Formulation
 The magnetic field is derived from the scalar potential:
@@ -101,4 +101,105 @@ end
         Qmm *= sqrt(T(2m + 1) / (2m + 2)) * asinθ
     end
     return SVector{3, R}(Br + sinθ * (S₀ + S₁), -Bθ - cosθ * S₁ + a * S₂, -Bφ)
+end
+
+struct LinearInterp{T, N, A <: AbstractArray{T, N}, B <: AbstractArray{T, N}, R} <: AbstractArray{T, N}
+    base::A
+    delta::B
+    ratio::R
+end
+
+Base.size(li::LinearInterp) = size(li.base)
+@inline Base.getindex(li::LinearInterp, i::Int...) = @inbounds muladd(li.delta[i...], li.ratio, li.base[i...])
+
+# maximum degree and order
+_degree(g::AbstractMatrix) = size(g, 1) - 1
+_degree(g::AbstractVector) = (isqrt(8 * length(g) + 1) - 3) ÷ 2
+_order(g::AbstractMatrix) = size(g, 2) - 1
+_order(g::AbstractVector) = _degree(g)
+
+"""
+    GaussCoefficients(g, h)
+
+Schmidt semi-normalized Gauss coefficients; `c[n, m]` returns `(; g, h)`.
+"""
+struct GaussCoefficients{A}
+    g::A
+    h::A
+end
+
+function Base.getindex(c::GaussCoefficients, n::Int, m::Int)
+    0 <= m <= n || throw(BoundsError(c, (n, m)))  # the packed layout would read another (n, m)
+    return (g = get_coeff(c.g, n, m), h = get_coeff(c.h, n, m))
+end
+Base.show(io::IO, c::GaussCoefficients) = print(io, "GaussCoefficients(degree=", _degree(c.g), ", order=", _order(c.g), ")")
+
+"""
+    TimeVaryingGaussCoefficients(epochs, coefficients)
+
+Gauss `coefficients` at sorted `epochs`; `c(t)` interpolates linearly and throws outside the epochs.
+"""
+struct TimeVaryingGaussCoefficients{T, C, D}
+    epochs::Vector{T}
+    coefficients::Vector{C}
+    deltas::Vector{D}
+end
+
+function TimeVaryingGaussCoefficients(epochs::Vector, coefficients::Vector)
+    length(epochs) == length(coefficients) || error("number of epochs must match number of coefficient sets")
+    length(epochs) >= 2 || error("at least two epochs are required")
+    issorted(epochs) || error("epochs must be sorted")
+    all(c -> size(c.g) == size(c.h) == size(first(coefficients).g), coefficients) || error("coefficient sets must have the same size")
+    deltas = [GaussCoefficients(c1.g - c0.g, c1.h - c0.h) for (c0, c1) in zip(coefficients, @view coefficients[2:end])]
+    return TimeVaryingGaussCoefficients(epochs, coefficients, deltas)
+end
+
+@inline function (c::TimeVaryingGaussCoefficients)(t)
+    eps = c.epochs
+    t = eltype(eps)(t)
+    first(eps) <= t <= last(eps) || _throw_epochs(c, t)
+    i = min(searchsortedlast(eps, t), length(eps) - 1)
+    c0, δ = c.coefficients[i], c.deltas[i]
+    α = (t - eps[i]) / (eps[i + 1] - eps[i])
+    return GaussCoefficients(LinearInterp(c0.g, δ.g, α), LinearInterp(c0.h, δ.h, α))
+end
+
+@noinline _throw_epochs(c, t) =
+    throw(DomainError(t, "outside the coefficient epochs $(first(c.epochs)) to $(last(c.epochs))"))
+
+"""
+    SphericalHarmonicModel(name, coeffs; radius, frame, degree, order) <: InternalFieldModel
+
+Internal field model in `frame` from coefficients `coeffs`;
+positions are in units of `radius`, and `degree`/`order` truncate the expansion.
+"""
+struct SphericalHarmonicModel{C, R, F} <: InternalFieldModel
+    name::String
+    coeffs::C
+    radius::R
+    degree::Int
+    order::Int
+    frame::F
+end
+
+function SphericalHarmonicModel(name, coeffs; radius, frame, degree = nothing, order = nothing)
+    g = _first_coeffs(coeffs).g
+    degree = @something degree _degree(g)
+    order = min(@something(order, _order(g)), degree)
+    return SphericalHarmonicModel(String(name), coeffs, radius, degree, order, frame)
+end
+
+_first_coeffs(c::GaussCoefficients) = c
+_first_coeffs(c::TimeVaryingGaussCoefficients) = first(c.coefficients)
+
+getcsys(m::SphericalHarmonicModel) = (m.frame, Spherical())
+
+evalmodel(m::SphericalHarmonicModel, r, θ, φ, t) = evalsph(_coeffs_at(m.coeffs, t), r, θ, φ, m.degree, m.order)
+_coeffs_at(c::GaussCoefficients, _) = c
+_coeffs_at(c::TimeVaryingGaussCoefficients, t) = c(t)
+
+function Base.show(io::IO, m::SphericalHarmonicModel)
+    print(io, "SphericalHarmonicModel(name=", m.name, ", radius=", m.radius, ", degree=", m.degree, ", order=", m.order)
+    m.coeffs isa TimeVaryingGaussCoefficients && print(io, ", epochs=", first(m.coeffs.epochs), "-", last(m.coeffs.epochs))
+    return print(io, ")")
 end
