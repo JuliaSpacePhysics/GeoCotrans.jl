@@ -41,9 +41,10 @@ end
     @test packed(1.0, 0.7, 2.0) ≈ B
     @test matrix(1.0, 0.7, 2.0) ≈ B
 
-    t = DateTime(2027, 7, 2, 12)
-    x = GSM(2.0, 1.0, 0.5)
-    @test SphericalHarmonicModel("IGRF", IGRF_COEFFS; earth...)(x, t) ≈ IGRF()(x, t)
+    snapshot(y) = SphericalHarmonicModel("IGRF$y", GaussCoefficients(igrf_ga[y], igrf_ha[y]); earth...)(1.0, 0.7, 2.0)
+    t0, t, t1 = DateTime(2025), DateTime(2027, 7, 2, 12), DateTime(2030)
+    α = (t - t0) / (t1 - t0)
+    @test IGRF()(1.0, 0.7, 2.0, t) ≈ (1 - α) * snapshot(2025) + α * snapshot(2030)
 end
 
 @testitem "evalsph is -∇V" begin

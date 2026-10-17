@@ -31,6 +31,8 @@ function igrf_Benu(𝐫, t)
     return SA[Be, Bn, Bu]
 end
 
+const IGRF14 = SphericalHarmonicModel("IGRF-14", IGRF_COEFFS; radius = R🜨, frame = GEO())
+
 """
     IGRF()
 
@@ -60,8 +62,9 @@ m(rand(3, 6), Date.(2015:2020); from = GSM())   # 3×6 matrix, one time per colu
 """
 struct IGRF <: InternalFieldModel end
 
-getcsys(::IGRF) = GEO(), Spherical()
-evalmodel(::IGRF, r, θ, φ, t) = igrf_B(r, θ, φ, t)
+getcsys(::IGRF) = getcsys(IGRF14)
+# degree/order constant-fold from the global
+evalmodel(::IGRF, r, θ, φ, t) = evalsph(IGRF14.coeffs(t), r, θ, φ, IGRF14.degree, IGRF14.order)
 
 """Alias for `IGRF()(args...; kw...)`; see [`IGRF`](@ref)."""
 igrf(args...; kw...) = IGRF()(args...; kw...)
