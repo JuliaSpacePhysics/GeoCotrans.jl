@@ -7,6 +7,41 @@
     @test g isa AbstractArray
     @test length(g) == 105
     @test length(h) == 105
+    g!, h! = zeros(105), zeros(105)
+    get_igrf_coeffs!(g!, h!, t)
+    @test (g!, h!) == (g, h)
+end
+
+@testitem "IGRF epochs" begin
+    using Dates
+    m = IGRF()
+    # 2025–2030: IGRF-14 secular variation, g10 changes by 12.6 nT/yr
+    @test get_igrf_coeffs(DateTime(2027, 7, 2, 12))[1][2] ≈ -29350.0 + 2.5 * 12.6 atol = 0.05
+    @test m(1.0, 0.5, 0.5, DateTime(2030)) isa AbstractVector
+    @test_throws DomainError m(1.0, 0.5, 0.5, DateTime(2030, 1, 2))
+    @test_throws DomainError m(1.0, 0.5, 0.5, DateTime(1964, 12, 31))
+end
+
+@testitem "SphericalHarmonicModel" begin
+    using Dates
+    using GeoCotrans: SphericalHarmonicModel, GaussCoefficients, IGRF_COEFFS, igrf_ga, igrf_ha, igrf_B, get_coeff, R🜨
+    g, h = igrf_ga[2015], igrf_ha[2015]
+    G, H = ([m <= n ? get_coeff(c, n, m) : 0.0 for n in 0:13, m in 0:13] for c in (g, h))
+    earth = (; radius = R🜨, frame = GEO())
+    packed = SphericalHarmonicModel("IGRF2015", GaussCoefficients(g, h); earth...)
+    matrix = SphericalHarmonicModel("IGRF2015", GaussCoefficients(G, H); earth...)
+    @test packed.degree == packed.order == 13
+    @test SphericalHarmonicModel("axisymmetric", GaussCoefficients(G[:, 1:1], H[:, 1:1]); earth...).order == 0
+    @test packed.coeffs[4, 2] == matrix.coeffs[4, 2] == (g = G[5, 3], h = H[5, 3])
+    @test_throws BoundsError matrix.coeffs[14, 0]
+    @test_throws BoundsError packed.coeffs[1, 2]
+    B = igrf_B(1.0, 0.7, 2.0, Date(2015))
+    @test packed(1.0, 0.7, 2.0) ≈ B
+    @test matrix(1.0, 0.7, 2.0) ≈ B
+
+    t = DateTime(2027, 7, 2, 12)
+    x = GSM(2.0, 1.0, 0.5)
+    @test SphericalHarmonicModel("IGRF", IGRF_COEFFS; earth...)(x, t) ≈ IGRF()(x, t)
 end
 
 @testitem "evalsph is -∇V" begin

@@ -38,21 +38,9 @@ igrf_ha[2025] = [0.0, 0.0, 4545.5, 0.0, -3133.6, -814.2, 0.0, -56.9, 237.6, -549
 igrf_ga[2030] = @. igrf_ga[2025] + 5 * igrf_dg
 igrf_ha[2030] = @. igrf_ha[2025] + 5 * igrf_dh
 
-const SV = SVector{105}
-
-const igrf_lookup = Dict(
-    i => (SV(igrf_ga[i]), SV(igrf_ha[i]), SV(igrf_ga[i + 5] .- igrf_ga[i]), SV(igrf_ha[i + 5] .- igrf_ha[i]))
-        for i in IGRF_min_year:5:(IGRF_max_year - 5)
-)
-
-struct LinearInterp{T, N, A <: AbstractArray{T, N}, B <: AbstractArray{T, N}, R} <: AbstractArray{T, N}
-    base::A
-    delta::B
-    ratio::R
+const IGRF_COEFFS = let years = IGRF_min_year:5:IGRF_max_year
+    TimeVaryingGaussCoefficients(DateTime.(years), [GaussCoefficients(igrf_ga[y], igrf_ha[y]) for y in years])
 end
-
-Base.size(li::LinearInterp) = size(li.base)
-@inline Base.getindex(li::LinearInterp, i::Int...) = @inbounds muladd(li.delta[i...], li.ratio, li.base[i...])
 
 """
     get_igrf_coeffs(time)
@@ -63,23 +51,17 @@ Similar to [IRBEM](https://github.com/PRBEM/IRBEM/blob/main/source/igrf_coef.f) 
 but with higher precision (IRBEM uses `year` as the time unit).
 """
 function get_igrf_coeffs(time)
-    year0, ratio = _get_year0_ratio(time)
-    g0, h0, dg, dh = @inbounds igrf_lookup[year0]
-    return LinearInterp(g0, dg, ratio), LinearInterp(h0, dh, ratio)
+    c = IGRF_COEFFS(time)
+    return c.g, c.h
 end
 
-@inline @inbounds function _get_igrf_dipole_coeffs(time)
-    year0, ratio = _get_year0_ratio(time)
-    g0, h0, dg, dh = igrf_lookup[year0]
-    g10 = dg[2] * ratio + g0[2]
-    g11 = dg[3] * ratio + g0[3]
-    h11 = dh[3] * ratio + h0[3]
-    return g10, g11, h11
+@inline function _get_igrf_dipole_coeffs(time)
+    c = IGRF_COEFFS(time)
+    return c.g[2], c.g[3], c.h[3]
 end
 
 function get_igrf_coeffs!(g, h, time)
-    year0, ratio = _get_year0_ratio(time)
-    g0, h0, dg, dh = @inbounds igrf_lookup[year0]
-    @. g = dg * ratio + g0
-    return @. h = dh * ratio + h0
+    c = IGRF_COEFFS(time)
+    g .= c.g
+    return h .= c.h
 end
