@@ -1,5 +1,19 @@
 using StaticArrays: Size
 
+abstract type AbstractReferenceFrame end
+abstract type AbstractRepresentation end
+
+struct Cartesian3 <: AbstractRepresentation end
+struct Spherical <: AbstractRepresentation end
+struct Geodetic <: AbstractRepresentation end
+
+"""
+    getcsys(x)
+
+Coordinate system `(frame, representation)` of a position or field model where its `evalmodel` works in; `nothing` if unknown.
+"""
+getcsys(::Any) = nothing
+
 include("FieldModels/FieldModels.jl")
 
 """
