@@ -82,6 +82,9 @@ end
     @test 𝐫 ≈ [0.4998961951811961, 0.043735250018097305, 0.8633345576875061]
     @test norm(𝐫) ≈ 1.0 rtol = 1.0e-2
     @test gdz2sph(lat, lon, alt) ≈ car2sph(𝐫)
+    for gdz in ([60, 5, 0], [90, 0, 100], [-90, 0, 100])
+        @test GeoCotrans.car2gdz(gdz2car(gdz...)) ≈ gdz atol = 1.0e-6
+    end
 end
 
 

@@ -86,10 +86,9 @@ function car2gdz(x, y, z; scale = R🜨)
     # Iterative solution for geodetic latitude
     φ = atan(z_km + b * e′² * sin(ψ)^3, p - a * e² * cos(ψ)^3)
 
-    # Calculate height
+    # Height; p / cosφ - N would divide by cosφ ≈ 0 at the poles
     sinφ, cosφ = sincos(φ)
-    N = a / sqrt(1 - e² * sinφ^2)
-    h = p / cosφ - N
+    h = p * cosφ + z_km * sinφ - a * sqrt(1 - e² * sinφ^2)
 
     # Convert to degrees
     return SA[rad2deg(φ), rad2deg(λ), h]
