@@ -15,7 +15,7 @@ Transformations between geocentric reference frames, IGRF-14 geomagnetic field, 
 - [`MAG`](@ref): $(description(MAG))
 - [`SM`](@ref): $(description(SM))
 
-`GEO(x, y, z)` etc. build a [`CoordinateVector`](@ref) tagged with its frame.
+`GEO(x, y, z)` etc. build a [`CoordinateVector`](@ref) tagged with its frame. Representations `Cartesian3`, `Spherical`, `Geodetic` follow the conventions above; [`getcsys`](@ref) gives `(frame, representation)`.
 [`GDZ`](@ref) `(lat, lon, alt)` is the geodetic representation of `GEO`. [`gdz2sph`](@ref) converts it to spherical.
 
 ## Coordinate transformations
@@ -50,8 +50,6 @@ using Dates: AbstractTime
 using LinearAlgebra
 using StaticArrays
 using TimeseriesUtilities: dimnum, mapsamples, tdimnum, times
-using SpaceDataModel: AbstractReferenceFrame, AbstractRepresentation, Spherical, Cartesian3, Geodetic
-import SpaceDataModel: getcsys
 export Spherical, Cartesian3, Geodetic, GDZ, gdz2sph
 export CoordinateVector, getcsys
 export get_mlt
