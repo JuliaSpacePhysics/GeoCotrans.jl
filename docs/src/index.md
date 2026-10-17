@@ -28,5 +28,4 @@ Private = false
 ```@autodocs
 Modules = [GeoCotrans]
 Public = false
-Order = [:function]
 ```
