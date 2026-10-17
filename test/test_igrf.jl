@@ -112,6 +112,7 @@ end
         B_true = [458.89660058, 14996.72893889, -49019.55372591]
         @test igrf_Benu(𝐫, t) ≈ B_true
         @test model(𝐫, t) ≈ B_true
+        @test model(GDZ(90, 0, 100), t) ≈ igrf_Benu(GDZ(90, 0, 100), t)
         gdz_array = [𝐫;; 𝐫]
         @test model(gdz_array, [t, t]; from = GDZ()) ≈ [B_true B_true]
         @test model(gdz_array, t; from = GDZ()) ≈ [B_true B_true]

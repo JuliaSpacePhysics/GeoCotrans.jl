@@ -76,10 +76,9 @@ function car2sph(Bx, By, Bz, x, y, z)
     r < 1.0e-10 && return SA[Bz, 0.0, 0.0]  # At origin
 
     ρ = sqrt(x^2 + y^2)
-    θ = atan(ρ, z)
-    sinθ, cosθ = sincos(θ)
-    sinφ = y / ρ
-    cosφ = x / ρ
+    sinθ, cosθ = ρ / r, z / r
+    # on the polar axis, φ = 0 as in `car2sph(x, y, z)`
+    sinφ, cosφ = iszero(ρ) ? (zero(ρ), one(ρ)) : (y / ρ, x / ρ)
     R = SA[
         sinθ * cosφ  sinθ * sinφ  cosθ
         cosθ * cosφ  cosθ * sinφ -sinθ

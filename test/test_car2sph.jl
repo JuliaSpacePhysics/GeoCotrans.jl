@@ -32,7 +32,7 @@
 end
 
 
-@testset "Field transformations" begin
+@testitem "Field transformations" begin
     using GeoCotrans: car2sph, car2sphd, sph2car
 
     # Test roundtrip at a known position
@@ -49,4 +49,9 @@ end
     B_sph = car2sph(B_cart, 𝐱)
 
     @test B_sph ≈ B atol = 1.0e-10
+
+    # polar axis: φ = 0, matching car2sph(x, y, z)
+    for θ in (0.0, π)
+        @test car2sph(sph2car(B, [2.0, θ, 0.0]), sph2car(2.0, θ, 0.0)) ≈ B
+    end
 end
