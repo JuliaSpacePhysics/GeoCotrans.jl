@@ -36,6 +36,10 @@ end
 CoordinateVector{F}(x, y, z) where {F} = CoordinateVector{F, Cartesian3}(x, y, z)
 CoordinateVector{F, R}(x, y, z) where {F, R} =
     CoordinateVector{F, R}(promote(x, y, z)...)
+
+_cartesian(x) = x
+_cartesian(x::CoordinateVector{F, R}) where {F, R} = to_cartesian(R(), x)
+
 StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1}}, ::Type{T2}, ::Size) where {C, R, T1, T2} =
     CoordinateVector{C, R, T2}
 
@@ -54,7 +58,8 @@ for sys in (:GEI, :GEO, :GSM, :GSE, :MAG, :SM)
             # check when frame is specified
             f = frame(𝐫)
             !isnothing(f) && @assert f isa $sys
-            return CoordinateVector{$sys}(𝐫[1], 𝐫[2], 𝐫[3])
+            x = _cartesian(𝐫)
+            return CoordinateVector{$sys}(x[1], x[2], x[3])
         end
         export $sys
     end

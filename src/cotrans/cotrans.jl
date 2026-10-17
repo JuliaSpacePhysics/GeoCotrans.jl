@@ -17,7 +17,7 @@ rotation(::Type{F}, ::Type{F}, ::Any) where {F} = LinearAlgebra.I
     transform(from => to, A; dim)
     transform(to, x::CoordinateVector, t)
 
-Transform Cartesian `x` from reference frame `from` to `to` at time(s) `t`, e.g. `transform(GEO() => GSM(), x, t)`.
+Transform `x` from reference frame `from` to `to` at time(s) `t`, e.g. `transform(GEO() => GSM(), x, t)`.
 `from` can be omitted for `x::CoordinateVector` (e.g. `GEO(x, y, z)`).
 
 `x` may be a 3-vector, or a matrix of stacked vectors along `dim` paired with optional single `t` or a per-sample vector of times.
@@ -81,7 +81,7 @@ end
 
 @inline function transform(p::Pair, x::CoordinateVector{F}, t) where {F}
     @assert F == frametype(p.first)
-    return frametype(p.second)((rotation(p, t) * x)...)
+    return frametype(p.second)((rotation(p, t) * _cartesian(x))...)
 end
 
 @inline transform(p::Pair, x, t) = rotation(p, t) * x

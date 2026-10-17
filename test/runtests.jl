@@ -233,6 +233,11 @@ end
     @test transform(GEI => GSM, gei, t) ≈ gsm
     @test transform(GEI => GSM(), gei, t) isa GeoCotrans.CoordinateVector{GSM, Cartesian3}
 
+    # non-Cartesian representations are converted first
+    @test transform(GEO => GSM, GDZ(60.0, 5.0, 100.0), t) ≈ geo2gsm(GeoCotrans.gdz2car(60.0, 5.0, 100.0), t)
+    @test transform(GEI => GSM, GeoCotrans.CoordinateVector{GEI, Spherical}(2.0, 0.5, 1.0), t) ≈ R * sph2car(2.0, 0.5, 1.0)
+    @test GEO(GDZ(60.0, 5.0, 100.0)) ≈ GeoCotrans.gdz2car(60.0, 5.0, 100.0)
+
     # frame mismatch is caught
     @test_throws AssertionError transform(GSE => GSM, gei, t)
 
