@@ -1,4 +1,3 @@
-# ── rotation: graph of frame-to-frame rotation matrices ───────────────────────
 export rotation, transform
 
 """
@@ -24,13 +23,8 @@ Transform `x` from reference frame `from` to `to` at time(s) `t`, e.g. `transfor
 """
 function transform end
 
-include("geo2gei.jl")
-include("gei2gsm.jl")
-include("gse2gsm.jl")
-include("geo2mag.jl")
-include("gsm2sm.jl")
-include("gdz2geo.jl")
-include("car2sph.jl")
+include("rotations.jl")
+include("representations.jl")
 
 for f in (:car2sph, :car2sphd, :sph2car, :sphd2car)
     @eval $f(rθφ) = $f(rθφ...)
@@ -38,29 +32,8 @@ for f in (:car2sph, :car2sphd, :sph2car, :sphd2car)
     @eval export $f
 end
 
-const coord_pairs = (
-    # Direct transformations
-    (:geo, :gei), (:gei, :geo),
-    (:gei, :gsm), (:gsm, :gei),
-    (:gse, :gsm), (:gsm, :gse),
-    (:geo, :mag), (:mag, :geo),
-    (:gsm, :sm), (:sm, :gsm),
-    # Chain transformations
-    (:gei, :sm), (:sm, :gei),
-    (:geo, :gsm), (:gsm, :geo),
-    (:geo, :sm), (:sm, :geo),
-    (:gei, :mag), (:mag, :gei),
-    (:sm, :mag), (:mag, :sm),
-)
-
-const direct_edges = ((:GEO, :GEI), (:GSM, :GEI), (:GSM, :GSE), (:MAG, :GEO), (:SM, :GSM))
-
-# inverses of direct edges
-for (From, To) in direct_edges
-    @eval rotation(::Type{$From}, ::Type{$To}, t) = transpose(rotation($To, $From, t))
-end
-
-# chain transformations
+# `rotations.jl` defines each edge in one direction; a chain `(A, B, C)` composes A → B → C.
+const edges = ((:GEI, :GEO), (:GEI, :GSM), (:GSE, :GSM), (:GEO, :MAG), (:GSM, :SM))
 const chains = (
     (:GEI, :GSM, :SM),
     (:GEO, :GEI, :GSM),
@@ -69,13 +42,14 @@ const chains = (
     (:SM, :GEI, :MAG),
 )
 
-for chain in chains
-    @eval rotation(::Type{$(chain[1])}, ::Type{$(chain[3])}, t) =
-        rotation($(chain[2]), $(chain[3]), t) * rotation($(chain[1]), $(chain[2]), t)
-    @eval rotation(::Type{$(chain[3])}, ::Type{$(chain[1])}, t) = transpose(rotation($(chain[1]), $(chain[3]), t))
+for (A, B) in edges
+    @eval rotation(::Type{$B}, ::Type{$A}, t) = transpose(rotation($A, $B, t))
 end
 
-# ── transform methods ─────────────────────────────────────────────────────────
+for (A, B, C) in chains
+    @eval rotation(::Type{$A}, ::Type{$C}, t) = rotation($B, $C, t) * rotation($A, $B, t)
+    @eval rotation(::Type{$C}, ::Type{$A}, t) = transpose(rotation($A, $C, t))
+end
 
 @inline transform(To, x::CoordinateVector{F}, t) where {F} = transform(F => To, x, t)
 
@@ -95,8 +69,7 @@ end
     return dim == 2 ? R * A : transpose(R * transpose(A))
 end
 
-# plain matrices stack samples as columns; keyed containers (e.g. DimArray) declare their time dimension.
-# Resolved to an index so callers can compare it against integers.
+# plain matrices stack samples as columns; keyed containers (e.g. DimArray) declare their time dimension
 _sampledim(A, dim) = dimnum(A, dim)
 _sampledim(A, ::Nothing) = something(tdimnum(A), 2)
 
@@ -107,21 +80,19 @@ _sampledim(A, ::Nothing) = something(tdimnum(A), 2)
 _rotate(p::Pair) = _rotate(frame(p.first), frame(p.second))
 _rotate(from, to) = (x, t) -> rotation(from => to, t) * SVector{3}(x)
 
-coord_type(s::Symbol) = Symbol(uppercase(string(s)))
-for p in coord_pairs
-    func = Symbol(p[1], "2", p[2])
-    T1, T2 = coord_type.(p)
-
+# both directions of every edge and chain
+const coord_maps = Dict{Tuple{Symbol, Symbol}, Function}()
+for (A, B) in (edges..., map(c -> (c[1], c[3]), chains)...), (F1, F2) in ((A, B), (B, A))
+    a, b = Symbol(lowercase(String(F1))), Symbol(lowercase(String(F2)))
+    func = Symbol(a, "2", b)
     doc = """$(func)(x, t)
 
-    Transforms coordinate(s) `x` from $(coord_text[p[1]]) to $(coord_text[p[2]]) reference frame at time(s) `t`.
+    Transforms coordinate(s) `x` from $(coord_text[a]) to $(coord_text[b]) reference frame at time(s) `t`.
 
-    Equivalent to [`transform`](@ref)`($T1 => $T2, x, t)`.
+    Equivalent to [`transform`](@ref)`($F1 => $F2, x, t)`.
     """
+    @eval @inline $func(args...; kw...) = transform($F1 => $F2, args...; kw...)
     @eval @doc $doc $func
-    @eval @inline $func(args...; kw...) = transform($T1 => $T2, args...; kw...)
     @eval export $func
+    coord_maps[(a, b)] = @eval $func
 end
-
-pair2func(p) = getfield(GeoCotrans, Symbol(p[1], "2", p[2]))
-const coord_maps = Dict(p => pair2func(p) for p in coord_pairs)
