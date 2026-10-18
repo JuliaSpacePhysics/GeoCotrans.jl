@@ -47,6 +47,18 @@ end
     @test IGRF()(1.0, 0.7, 2.0, t) ≈ (1 - α) * snapshot(2025) + α * snapshot(2030)
 end
 
+@testitem "Unitful positions" begin
+    using Dates, Unitful
+    using GeoCotrans: SphericalHarmonicModel, IGRF_COEFFS, R🜨
+    t = DateTime(2020)
+    r, θ, φ = 1.5, 0.7, 2.0
+    x = r * R🜨 * u"km"
+    m = IGRF()
+    @test m(uconvert(u"m", x), θ, φ, t) ≈ m(r, θ, φ, t)
+    @test m(uconvert(u"m", x), θ, φ, t; from = GEO()) ≈ m(r, θ, φ, t)
+    @test m(x, 0u"km", 2x, t; from = GSM()) ≈ m(r, 0.0, 2r, t; from = GSM())
+end
+
 @testitem "evalsph is -∇V" begin
     using Dates
     using ForwardDiff

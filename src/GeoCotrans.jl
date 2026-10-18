@@ -4,6 +4,7 @@ Transformations between geocentric reference frames, IGRF-14 geomagnetic field, 
 ## Conventions
 
 - Positions: Cartesian `(x, y, z)` in Earth radii (`R🜨 = 6371.2 km`); spherical `(r [Re], θ colatitude [rad], φ east longitude [rad])`; [`GDZ`](@ref) `(lat [deg], lon [deg], alt [km])`.
+- Field models take positions in units of their reference radius (Re for IGRF). With Unitful loaded, positions may also be lengths (`r`, or Cartesian `x, y, z`).
 - Batched input: a `3×N` matrix (`dim = 2`, default) with one `t` for all columns or a length-`N` vector of times, or a time-keyed matrix (e.g. `DimArray`) alone.
 
 ## Reference frames

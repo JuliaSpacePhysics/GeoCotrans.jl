@@ -28,6 +28,9 @@ abstract type CompositeFieldModel <: MagneticFieldModel end
 
 function evalmodel end
 
+"""Length unit in km or as a Unitful length. Models defining it accept Unitful positions."""
+function reference_radius end
+
 @inline function (m::MagneticFieldModel)(𝐫, t = nothing; from = nothing, to = nothing, kw...)
     model_csys = getcsys(m)
     from_frame = @something frame(𝐫) frame(from) model_csys[1]
