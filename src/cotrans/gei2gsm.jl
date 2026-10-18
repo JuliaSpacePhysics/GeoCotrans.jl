@@ -10,10 +10,8 @@ Second axis: cross product of dipole and sun, normalized.
 Third axis: cross product of sun and y-axis.
 """
 function rotation(::Type{GEI}, ::Type{GSM}, time)
-    gst, ra, dec = csundir(time)
-    dipole_gei = rotation(GEO => GEI, gst) * calc_dipole_geo(time)
-    v1 = calc_sun_gei(ra, dec)
-    v2 = normalize(dipole_gei × v1)
+    v1 = sun_gei(time)
+    v2 = normalize(calc_dipole_gei(time) × v1)
     v3 = v1 × v2
     return transpose(hcat(v1, v2, v3))
 end

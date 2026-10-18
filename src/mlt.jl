@@ -11,7 +11,7 @@ Magnetic local time in hours, `[0, 24)`, of Cartesian GEO position(s) `xGEO`.
 @inline function get_mlt(xGEO, time)
     mlon_pos = φ(geo2mag(GEO(xGEO), time))
 
-    x_sun_gei = calc_sun_gei(time)
+    x_sun_gei = sun_gei(time)
     x_sun_mag = gei2mag(x_sun_gei, time)
     mlon_sun = φ(x_sun_mag)
 

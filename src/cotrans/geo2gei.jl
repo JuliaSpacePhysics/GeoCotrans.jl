@@ -11,4 +11,4 @@ an `AbstractTime` from which `gst` is derived.
     return SA[cgst sgst 0; -sgst cgst 0; 0 0 1]
 end
 
-rotation(::Type{GEI}, ::Type{GEO}, time::AbstractTime) = rotation(GEI, GEO, calculate_gst_alt(time))
+rotation(::Type{GEI}, ::Type{GEO}, time::AbstractTime) = rotation(GEI, GEO, gmst(time))

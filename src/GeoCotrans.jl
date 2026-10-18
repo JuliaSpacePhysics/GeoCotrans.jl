@@ -63,7 +63,7 @@ include("gdz.jl")
 include("spherical_harmonics.jl")
 include("igrf.jl")
 include("dipole.jl")
-include("csundir.jl")
+include("sun.jl")
 include("cotrans/cotrans.jl")
 include("FieldModels/transform.jl")
 
