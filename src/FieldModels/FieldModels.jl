@@ -1,29 +1,8 @@
-"""
-    MagneticFieldModel
-
-Abstract base type for all magnetic field models.
-"""
 abstract type MagneticFieldModel end
 
-"""
-    InternalFieldModel <: MagneticFieldModel
-
-Abstract type for internal (planetary) magnetic field models.
-"""
 abstract type InternalFieldModel <: MagneticFieldModel end
-
-"""
-    ExternalFieldModel <: MagneticFieldModel
-
-Abstract type for external (magnetospheric) magnetic field models.
-"""
+# External (magnetospheric) magnetic field models
 abstract type ExternalFieldModel <: MagneticFieldModel end
-
-"""
-    CompositeFieldModel <: MagneticFieldModel
-
-Abstract type for composite magnetic field models that combine multiple models.
-"""
 abstract type CompositeFieldModel <: MagneticFieldModel end
 
 function evalmodel end

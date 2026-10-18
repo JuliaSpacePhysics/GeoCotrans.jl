@@ -95,8 +95,8 @@ end
 @testitem "IGRF calculation" begin
     using Dates
     using GeoCotrans: IGRF, R🜨, igrf_B, igrf_Benu, igrf_Bd
-    using GeoCotrans: Spherical, car2sph, sph2car
-    using Chairmarks
+    using GeoCotrans: Spherical, car2sph, sph2car, gdz2sph
+    using Chairmarks, LinearAlgebra
 
     # Test IGRF magnetic field calculation
     r = 1.0
@@ -123,6 +123,13 @@ end
         t = Date(2021, 3, 28)
         B_true = [458.89660058, 14996.72893889, -49019.55372591]
         @test igrf_Benu(𝐫, t) ≈ B_true
+        lat, lon = 𝐫[1], 𝐫[2]
+        rθφ = gdz2sph(𝐫...)
+        B_car = sph2car(igrf_B(rθφ..., t), rθφ)
+        e = [-sind(lon), cosd(lon), 0]
+        n = [-sind(lat) * cosd(lon), -sind(lat) * sind(lon), cosd(lat)]
+        u = [cosd(lat) * cosd(lon), cosd(lat) * sind(lon), sind(lat)]
+        @test igrf_Benu(𝐫, t) ≈ [e ⋅ B_car, n ⋅ B_car, u ⋅ B_car] atol = 1.0e-8
         @test model(𝐫, t) ≈ B_true
         @test model(GDZ(90, 0, 100), t) ≈ igrf_Benu(GDZ(90, 0, 100), t)
         gdz_array = [𝐫;; 𝐫]

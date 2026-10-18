@@ -5,7 +5,7 @@ export igrf, igrf_B
 include("igrf_coef.jl")
 
 """
-    igrf_B(r, θ, φ, t; max_degree=IGRF_degree) -> (Br, Bθ, Bφ)
+    igrf_B(r, θ, φ, t; max_degree=IGRF_degree) -> [Br, Bθ, Bφ]
 
 Calculate IGRF model components in geocentric coordinates `(r [Re], θ [rad], φ [rad])`
 at time `t`, where `r` is the radius, `θ` the colatitude, and `φ` the longitude.
@@ -21,14 +21,7 @@ igrf_Bd(r, θ, φ, t; kw...) = igrf_B(r, deg2rad(θ), deg2rad(φ), t; kw...)
 function igrf_Benu(𝐫, t)
     gdlat, gdlon, alt = 𝐫
     r, θ, φ = gdz2sph(gdlat, gdlon, alt)
-    Br, Bθ, Bφ = igrf_B(r, θ, φ, t)
-
-    ψ = sind(gdlat) * sin(θ) - cosd(gdlat) * cos(θ)
-    sinψ, cosψ = sincos(ψ)
-    Be = Bφ
-    Bn = -sinψ * Br - cosψ * Bθ
-    Bu = cosψ * Br - sinψ * Bθ
-    return SA[Be, Bn, Bu]
+    return sph2enu(igrf_B(r, θ, φ, t)..., gdlat, θ)
 end
 
 const IGRF14 = SphericalHarmonicModel("IGRF-14", IGRF_COEFFS; radius = R🜨, frame = GEO())
