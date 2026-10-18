@@ -63,6 +63,7 @@ m(rand(3, 6), Date.(2015:2020); from = GSM())   # 3×6 matrix, one time per colu
 struct IGRF <: InternalFieldModel end
 
 getcsys(::IGRF) = getcsys(IGRF14)
+reference_radius(::IGRF) = reference_radius(IGRF14)
 # degree/order constant-fold from the global
 evalmodel(::IGRF, r, θ, φ, t) = evalsph(IGRF14.coeffs(t), r, θ, φ, IGRF14.degree, IGRF14.order)
 

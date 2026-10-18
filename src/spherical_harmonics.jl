@@ -206,6 +206,7 @@ _first_coeffs(c::GaussCoefficients) = c
 _first_coeffs(c::TimeVaryingGaussCoefficients) = first(c.coefficients)
 
 getcsys(m::SphericalHarmonicModel) = (m.frame, Spherical())
+reference_radius(m::SphericalHarmonicModel) = m.radius
 
 evalmodel(m::SphericalHarmonicModel, r, θ, φ, t) = evalsph(_coeffs_at(m.coeffs, t), r, θ, φ, m.degree, m.order)
 _coeffs_at(c::GaussCoefficients, _) = c

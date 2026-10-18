@@ -15,9 +15,11 @@ TimeseriesUtilities = "31d49243-0742-49c1-b8d2-db113b74581e"
 
 [weakdeps]
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [extensions]
 GeoCotransSciMLExt = "SciMLBase"
+GeoCotransUnitfulExt = "Unitful"
 
 [compat]
 Dates = "1"
@@ -26,4 +28,5 @@ PrecompileTools = "1"
 SciMLBase = "2, 3"
 StaticArrays = "1"
 TimeseriesUtilities = "0.3"
+Unitful = "1"
 julia = "1.10"
