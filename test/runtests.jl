@@ -256,7 +256,8 @@ end
     @test_throws AssertionError transform(GSE => GSM, gei, t)
 
     # identity
-    @test transform(GEI => GEI, x, t) ≈ x
+    @test transform(GEI => GEI, x, t) == x
+    @test transform(GEI => GEI, x, t) isa GeoCotrans.SVector{3}
     @test transform(GEI, gei, t) ≈ gei
 
     # matrix path: scalar time builds rotation once
@@ -273,6 +274,11 @@ end
     @test transform(GEI => GSM, A1, ts; dims = 1) ≈ permutedims(B)
     @test transform(GEI => GSM, A1, ts; dim = 1) ≈ permutedims(B)
     @test transform(GEI => GSM, A, Ref(t)) ≈ R * A
+
+    # vectors of vectors: one sample per element
+    vs = [A[:, i] for i in 1:3]
+    @test transform(GEI => GSM, vs, t) ≈ [R * v for v in vs]
+    @test transform(GEI => GSM, vs, ts[1:3]) ≈ [rotation(GEI => GSM, ti) * v for (v, ti) in zip(vs, ts[1:3])]
 
     # keyed containers keep their axes with a single time
     v = DimArray(x, Y(1:3))

@@ -8,7 +8,7 @@ Rotation matrix taking vectors from reference frame `from` to `to` at time `t`, 
 function rotation end
 # types (`GEI => GSM`) also work at a literal call site, but `Pair{DataType,DataType}` can cause dynamic dispatch once stored in a variable or passed through a function boundary.
 
-rotation(::Type{F}, ::Type{F}, ::Any) where {F} = LinearAlgebra.I
+rotation(::Type{F}, ::Type{F}, ::Any) where {F} = one(SMatrix{3, 3, Float64})
 @inline rotation(p::Pair, t) = rotation(frametype(p.first), frametype(p.second), t)
 
 """
@@ -82,6 +82,14 @@ end
 
 _mul(R, x) = R * x
 _mul(R, x::AbstractArray) = rebuild(x, R * unwrap(x))
+
+# each element is one sample; `t` broadcasts as in the matrix path
+function transform(p::Pair, x::AbstractVector{<:AbstractVector}, t)
+    U, bt = unwrap(x), Base.broadcastable(t)
+    isempty(axes(bt)) || return rebuild(x, _rotate(p).(U, bt))
+    R = rotation(p, bt[])
+    return rebuild(x, map(v -> R * SVector{3}(v), U))
+end
 
 # matrix path: `t` follows broadcast rules as in `mapsamples`
 @inline function transform(p::Pair, A::AbstractMatrix, t; dim=nothing, dims=nothing)
