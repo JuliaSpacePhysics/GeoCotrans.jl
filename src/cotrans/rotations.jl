@@ -17,13 +17,26 @@ function rotation(::Type{GEI}, ::Type{GSM}, time)
     return transpose(hcat(x, y, x × y))
 end
 
+function _ecliptic_pole_gei(ε)
+    s, c = sincos(ε)
+    return SA[0, -s, c]
+end
+
+# GEI → GSE: T2 = <λ, Z> * <ε, X>; rows are the GSE axes in GEI (X sunward, Z the ecliptic pole).
+function rotation(::Type{GEI}, ::Type{GSE}, time)
+    λ, ε = sun_ecliptic(time)
+    x = _sun_gei(λ, ε)
+    z = _ecliptic_pole_gei(ε)
+    return transpose(hcat(x, z × x, z))
+end
+
 # GSE → GSM: T3 = <-ψ, X>, aligning GSE Z with GSM Z.
 function rotation(::Type{GSE}, ::Type{GSM}, time)
     λ, ε = sun_ecliptic(time)
     d = calc_dipole_gei(time)
     y = d × _sun_gei(λ, ε)  # ∥ GSM Y
     n = norm(y)
-    pole = SA[0, -sin(ε), cos(ε)]  # GSE Z in GEI
+    pole = _ecliptic_pole_gei(ε)
     # pole ⟂ sun, so pole ⋅ (GSM Z) reduces to pole ⋅ d / n
     c, s = dot(pole, d) / n, dot(pole, y) / n
     return SA[1 0 0; 0 c s; 0 -s c]

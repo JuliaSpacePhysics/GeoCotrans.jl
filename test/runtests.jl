@@ -202,17 +202,26 @@ end
     @test rotation(GEI => GEI, t) == I
     @test rotation(GSM => GSM, t) == I
 
-    # inverse via transpose round-trips to identity (direct edges)
-    for (F1, F2) in ((GEI, GSM), (GSE, GSM), (GEO, MAG), (GSM, SM), (GEI, GEO))
-        R = rotation(F1 => F2, t)
-        @test R * rotation(F2 => F1, t) ≈ I
-        @test rotation(F2 => F1, t) ≈ transpose(R)
+    frames = (GEI, GEO, GSM, GSE, MAG, SM)
+    for F1 in frames, F2 in frames
+        @test rotation(F2 => F1, t) ≈ transpose(rotation(F1 => F2, t))
+        for F3 in frames
+            @test rotation(F2 => F3, t) * rotation(F1 => F2, t) ≈ rotation(F1 => F3, t)
+        end
     end
+end
 
-    # all chain pairs round-trip to identity
-    for (F1, F2) in ((GEI, SM), (GEO, GSM), (GEO, SM), (GEI, MAG), (SM, MAG))
-        @test rotation(F1 => F2, t) * rotation(F2 => F1, t) ≈ I
-    end
+@testitem "frames by name" begin
+    using Dates
+    using GeoCotrans: frame
+
+    t = DateTime(2001, 1, 1, 2, 3, 4)
+    x = [1.0, 2.0, 3.0]
+    @test frame(:GSE) === frame("gse") === frame("Gse") === GSE()
+    @test frame(:spherical) === frame("foo") === nothing
+    @test transform("gse" => :SM, x, t) ≈ transform(GSE => SM, x, t)
+    @test_throws "unknown reference frame :gse" transform(:gse => GEO, x, t)
+    @test_throws "unknown reference frame :foo" transform(:foo => GEO, [x x], [t, t])
 end
 
 @testitem "transform interface" begin

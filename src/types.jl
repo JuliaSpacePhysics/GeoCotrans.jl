@@ -43,7 +43,9 @@ _cartesian(x::CoordinateVector{F, R}) where {F, R} = to_cartesian(R(), x)
 StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1}}, ::Type{T2}, ::Size) where {C, R, T1, T2} =
     CoordinateVector{C, R, T2}
 
-for sys in (:GEI, :GEO, :GSM, :GSE, :MAG, :SM)
+const FRAME_NAMES = (:GEI, :GEO, :GSM, :GSE, :MAG, :SM)
+
+for sys in FRAME_NAMES
     doc = """$(FrameDescriptions[sys])
 
     $(get(FrameDefinitions, sys, ""))
@@ -75,8 +77,31 @@ frame(::CoordinateVector{F}) where {F} = F()
 frame(f::AbstractReferenceFrame) = f
 frame(::Type{F}) where {F <: AbstractReferenceFrame} = F()
 frame(csys::Tuple) = frame(csys[1])
+# by name (`:GSE`, `"gse"`), e.g. from CDF `COORDINATE_SYSTEM` metadata. Symbols compare by identity so literals constant-fold.
+@eval @inline function frame(s::Symbol)
+    $((:(s === $(QuoteNode(n)) && return $n()) for n in FRAME_NAMES)...)
+    return nothing
+end
+@eval function frame(s::AbstractString)
+    $((:(_iequal(s, $(String(n))) && return $n()) for n in FRAME_NAMES)...)
+    return nothing
+end
+# `& 0xdf` clears the ASCII case bit, and no other byte maps onto A-Z
+function _iequal(s, upper)
+    s = codeunits(s)
+    length(s) == ncodeunits(upper) || return false
+    for i in eachindex(s)
+        s[i] & 0xdf == codeunit(upper, i) || return false
+    end
+    return true
+end
 frametype(::Type{F}) where {F <: AbstractReferenceFrame} = F
-frametype(x) = typeof(frame(x))
+frametype(x) = typeof(_checked_frame(x))
+function _checked_frame(x)
+    f = frame(x)
+    isnothing(f) && throw(ArgumentError("unknown reference frame $(repr(x))"))
+    return f
+end
 # get the coordinate representation
 representation(::Any) = nothing
 representation(s::Symbol) = if s == :spherical
