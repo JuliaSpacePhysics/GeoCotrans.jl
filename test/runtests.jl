@@ -220,6 +220,7 @@ end
     @test frame(:GSE) === frame("gse") === frame("Gse") === GSE()
     @test frame(:spherical) === frame("foo") === nothing
     @test transform("gse" => :SM, x, t) ≈ transform(GSE => SM, x, t)
+    @test transform("j2000" => GEI, x, t) ≈ transform(J2000 => GEI, x, t)
     @test_throws "unknown reference frame :gse" transform(:gse => GEO, x, t)
     @test_throws "unknown reference frame :foo" transform(:foo => GEO, [x x], [t, t])
 end
@@ -227,6 +228,7 @@ end
 @testitem "transform interface" begin
     using Dates
     using LinearAlgebra
+    using DimensionalData
 
     t = DateTime(2001, 1, 1, 2, 3, 4)
     R = rotation(GEI => GSM, t)
@@ -254,7 +256,8 @@ end
     @test_throws AssertionError transform(GSE => GSM, gei, t)
 
     # identity
-    @test transform(GEI => GEI, x, t) ≈ x
+    @test transform(GEI => GEI, x, t) == x
+    @test transform(GEI => GEI, x, t) isa GeoCotrans.SVector{3}
     @test transform(GEI, gei, t) ≈ gei
 
     # matrix path: scalar time builds rotation once
@@ -271,9 +274,31 @@ end
     @test transform(GEI => GSM, A1, ts; dims = 1) ≈ permutedims(B)
     @test transform(GEI => GSM, A1, ts; dim = 1) ≈ permutedims(B)
     @test transform(GEI => GSM, A, Ref(t)) ≈ R * A
+
+    # vectors of vectors: one sample per element
+    vs = [A[:, i] for i in 1:3]
+    @test transform(GEI => GSM, vs, t) ≈ [R * v for v in vs]
+    @test transform(GEI => GSM, vs, ts[1:3]) ≈ [rotation(GEI => GSM, ti) * v for (v, ti) in zip(vs, ts[1:3])]
+
+    # keyed containers keep their axes with a single time
+    v = DimArray(x, Y(1:3))
+    @test transform(GEI => GSM, v, t) == DimArray(R * x, Y(1:3))
+    da = DimArray(A1, (Ti(ts), Y(1:3)))
+    @test transform(GEI => GSM, da, t) == DimArray(permutedims(R * A), (Ti(ts), Y(1:3)))
 end
 
 @testitem "Aqua" begin
     using Aqua
     Aqua.test_all(GeoCotrans)
+end
+
+@testitem "J2000" begin
+    using Dates, LinearAlgebra
+    import IRBEM
+    x = normalize([1.0, 2.0, 3.0])
+    arcsec(a, b) = rad2deg(acos(clamp(dot(normalize(a), normalize(b)), -1, 1))) * 3600
+    # precession alone reaches ~1000″ by these dates; IRBEM uses the full nutation series
+    for t in (DateTime(1985, 3, 1), DateTime(2000, 1, 1, 12), DateTime(2026, 7, 4, 5))
+        @test arcsec(transform(J2000 => GEI, x, t), IRBEM.transform(t, x, "J2000", "GEI")) < 0.5
+    end
 end

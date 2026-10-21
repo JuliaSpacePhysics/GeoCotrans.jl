@@ -5,7 +5,7 @@ Transformations between geocentric reference frames, IGRF-14 geomagnetic field, 
 
 - Positions: Cartesian `(x, y, z)` in Earth radii (`R🜨 = 6371.2 km`); spherical `(r [Re], θ colatitude [rad], φ east longitude [rad])`; [`GDZ`](@ref) `(lat [deg], lon [deg], alt [km])`.
 - Field models take positions in units of their reference radius (Re for IGRF). With Unitful loaded, positions may also be lengths (`r`, or Cartesian `x, y, z`).
-- Batched input: a matrix of 3-vectors stacked along `dim` (default: the container's time dimension, else 2, i.e. `3×N`) with one `t` for all samples or a length-`N` vector of times; a time-keyed matrix (e.g. `DimArray`) may omit `t`.
+- Batched input: a vector of 3-vectors, or a matrix of 3-vectors stacked along `dim` (default: the container's time dimension, else 2, i.e. `3×N`) with one `t` for all samples or a length-`N` vector of times; a time-keyed matrix (e.g. `DimArray`) may omit `t`.
 
 ## Reference frames
 
@@ -48,7 +48,7 @@ using Dates
 using Dates: AbstractTime
 using LinearAlgebra
 using StaticArrays
-using TimeseriesUtilities: dimnum, mapsamples, tdimnum, times
+using TimeseriesUtilities: dimnum, mapsamples, rebuild, tdimnum, times, unwrap
 export Spherical, Cartesian3, Geodetic, GDZ, gdz2sph
 export CoordinateVector, getcsys
 export get_mlt

@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/1004669370.svg)](https://doi.org/10.5281/zenodo.15709873)
 
-Julia package for transformations between geocentric coordinate systems (GEI/GEO/GSE/GSM/MAG/SM), IGRF-14 geomagnetic field evaluation, and magnetic field line tracing.
+Julia package for transformations between geocentric coordinate systems (GEI/GEO/GSE/GSM/MAG/SM/J2000), IGRF-14 geomagnetic field evaluation, and magnetic field line tracing.
 
 ## Quick Start
 

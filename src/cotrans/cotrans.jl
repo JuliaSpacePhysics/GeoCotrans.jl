@@ -8,7 +8,7 @@ Rotation matrix taking vectors from reference frame `from` to `to` at time `t`, 
 function rotation end
 # types (`GEI => GSM`) also work at a literal call site, but `Pair{DataType,DataType}` can cause dynamic dispatch once stored in a variable or passed through a function boundary.
 
-rotation(::Type{F}, ::Type{F}, ::Any) where {F} = LinearAlgebra.I
+rotation(::Type{F}, ::Type{F}, ::Any) where {F} = one(SMatrix{3, 3, Float64})
 @inline rotation(p::Pair, t) = rotation(frametype(p.first), frametype(p.second), t)
 
 """
@@ -33,7 +33,7 @@ for f in (:car2sph, :car2sphd, :sph2car, :sphd2car)
 end
 
 # `rotations.jl` defines each edge in one direction; every other pair composes edges along a shortest path
-const edges = ((:GEI, :GEO), (:GEI, :GSM), (:GEI, :GSE), (:GSE, :GSM), (:GEO, :MAG), (:GSM, :SM))
+const edges = ((:GEI, :GEO), (:GEI, :GSM), (:GEI, :GSE), (:GSE, :GSM), (:GEO, :MAG), (:GSM, :SM), (:J2000, :GEI))
 
 for (A, B) in edges
     @eval rotation(::Type{$B}, ::Type{$A}, t) = transpose(rotation($A, $B, t))
@@ -76,17 +76,28 @@ end
 @inline transform(p::Pair, x, t) =
     _split(_checked_frame(p.first)) do from
         _split(_checked_frame(p.second)) do to
-            rotation(from => to, t) * x
+            _mul(rotation(from => to, t), x)
         end
     end
+
+_mul(R, x) = R * x
+_mul(R, x::AbstractArray) = rebuild(x, R * unwrap(x))
+
+# each element is one sample; `t` broadcasts as in the matrix path
+function transform(p::Pair, x::AbstractVector{<:AbstractVector}, t)
+    U, bt = unwrap(x), Base.broadcastable(t)
+    isempty(axes(bt)) || return rebuild(x, _rotate(p).(U, bt))
+    R = rotation(p, bt[])
+    return rebuild(x, map(v -> R * SVector{3}(v), U))
+end
 
 # matrix path: `t` follows broadcast rules as in `mapsamples`
 @inline function transform(p::Pair, A::AbstractMatrix, t; dim=nothing, dims=nothing)
     dim = _sampledim(A, @something dim dims Some(nothing))
     bt = Base.broadcastable(t)
     isempty(axes(bt)) || return mapsamples(_rotate(p), A, bt; dim)
-    R = rotation(p, bt[])
-    return dim == 2 ? R * A : transpose(R * transpose(A))
+    R, U = rotation(p, bt[]), unwrap(A)
+    return rebuild(A, dim == 2 ? R * U : transpose(R * transpose(U)))
 end
 
 # plain matrices stack samples as columns; keyed containers (e.g. DimArray) declare their time dimension
