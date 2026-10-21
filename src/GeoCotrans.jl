@@ -48,7 +48,7 @@ using Dates
 using Dates: AbstractTime
 using LinearAlgebra
 using StaticArrays
-using TimeseriesUtilities: dimnum, mapsamples, tdimnum, times
+using TimeseriesUtilities: dimnum, mapsamples, rebuild, tdimnum, times, unwrap
 export Spherical, Cartesian3, Geodetic, GDZ, gdz2sph
 export CoordinateVector, getcsys
 export get_mlt

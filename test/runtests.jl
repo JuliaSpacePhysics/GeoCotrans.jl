@@ -227,6 +227,7 @@ end
 @testitem "transform interface" begin
     using Dates
     using LinearAlgebra
+    using DimensionalData
 
     t = DateTime(2001, 1, 1, 2, 3, 4)
     R = rotation(GEI => GSM, t)
@@ -271,6 +272,12 @@ end
     @test transform(GEI => GSM, A1, ts; dims = 1) ≈ permutedims(B)
     @test transform(GEI => GSM, A1, ts; dim = 1) ≈ permutedims(B)
     @test transform(GEI => GSM, A, Ref(t)) ≈ R * A
+
+    # keyed containers keep their axes with a single time
+    v = DimArray(x, Y(1:3))
+    @test transform(GEI => GSM, v, t) == DimArray(R * x, Y(1:3))
+    da = DimArray(A1, (Ti(ts), Y(1:3)))
+    @test transform(GEI => GSM, da, t) == DimArray(permutedims(R * A), (Ti(ts), Y(1:3)))
 end
 
 @testitem "Aqua" begin

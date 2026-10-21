@@ -76,17 +76,20 @@ end
 @inline transform(p::Pair, x, t) =
     _split(_checked_frame(p.first)) do from
         _split(_checked_frame(p.second)) do to
-            rotation(from => to, t) * x
+            _mul(rotation(from => to, t), x)
         end
     end
+
+_mul(R, x) = R * x
+_mul(R, x::AbstractArray) = rebuild(x, R * unwrap(x))
 
 # matrix path: `t` follows broadcast rules as in `mapsamples`
 @inline function transform(p::Pair, A::AbstractMatrix, t; dim=nothing, dims=nothing)
     dim = _sampledim(A, @something dim dims Some(nothing))
     bt = Base.broadcastable(t)
     isempty(axes(bt)) || return mapsamples(_rotate(p), A, bt; dim)
-    R = rotation(p, bt[])
-    return dim == 2 ? R * A : transpose(R * transpose(A))
+    R, U = rotation(p, bt[]), unwrap(A)
+    return rebuild(A, dim == 2 ? R * U : transpose(R * transpose(U)))
 end
 
 # plain matrices stack samples as columns; keyed containers (e.g. DimArray) declare their time dimension
