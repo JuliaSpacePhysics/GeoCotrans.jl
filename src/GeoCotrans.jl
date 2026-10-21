@@ -5,7 +5,7 @@ Transformations between geocentric reference frames, IGRF-14 geomagnetic field, 
 
 - Positions: Cartesian `(x, y, z)` in Earth radii (`R🜨 = 6371.2 km`); spherical `(r [Re], θ colatitude [rad], φ east longitude [rad])`; [`GDZ`](@ref) `(lat [deg], lon [deg], alt [km])`.
 - Field models take positions in units of their reference radius (Re for IGRF). With Unitful loaded, positions may also be lengths (`r`, or Cartesian `x, y, z`).
-- Batched input: a `3×N` matrix (`dim = 2`, default) with one `t` for all columns or a length-`N` vector of times, or a time-keyed matrix (e.g. `DimArray`) alone.
+- Batched input: a matrix of 3-vectors stacked along `dim` (default: the container's time dimension, else 2, i.e. `3×N`) with one `t` for all samples or a length-`N` vector of times; a time-keyed matrix (e.g. `DimArray`) may omit `t`.
 
 ## Reference frames
 
@@ -23,9 +23,7 @@ Transformations between geocentric reference frames, IGRF-14 geomagnetic field, 
 
 - [`transform`](@ref)`(from => to, x, t)`: generic frame transform.
 - [`rotation`](@ref)`(from, to, t)`: the underlying 3×3 rotation matrix.
-- `a2b(x, t)` shortcuts, each with inverse `b2a`:
-  direct [`geo2gei`](@ref), [`gei2gsm`](@ref), [`gse2gsm`](@ref), [`geo2mag`](@ref), [`gsm2sm`](@ref);
-  chained [`geo2gsm`](@ref), [`gei2sm`](@ref), [`geo2sm`](@ref), [`gei2mag`](@ref), [`sm2mag`](@ref).
+- `a2b(x, t)` shortcuts for every pair of frames, e.g. [`gse2gei`](@ref), [`geo2gsm`](@ref).
 - Representation: [`car2sph`](@ref), [`sph2car`](@ref) (radians); [`car2sphd`](@ref), [`sphd2car`](@ref) (degrees).
 
 ## Geomagnetic field
@@ -55,6 +53,7 @@ export Spherical, Cartesian3, Geodetic, GDZ, gdz2sph
 export CoordinateVector, getcsys
 export get_mlt
 export trace, find_magequator
+VERSION >= v"1.11" && eval(Meta.parse("public frame, frametype"))
 
 include("info.jl")
 include("constants.jl")

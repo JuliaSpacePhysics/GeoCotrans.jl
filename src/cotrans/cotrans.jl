@@ -12,14 +12,14 @@ rotation(::Type{F}, ::Type{F}, ::Any) where {F} = LinearAlgebra.I
 @inline rotation(p::Pair, t) = rotation(frametype(p.first), frametype(p.second), t)
 
 """
-    transform(from => to, x, [t]; dim = 2)
+    transform(from => to, x, t; dim)
     transform(from => to, A; dim)
     transform(to, x::CoordinateVector, t)
 
 Transform `x` from reference frame `from` to `to` at time(s) `t`, e.g. `transform(GEO() => GSM(), x, t)`.
 `from` can be omitted for `x::CoordinateVector` (e.g. `GEO(x, y, z)`).
 
-`x` may be a 3-vector, or a matrix of stacked vectors along `dim` paired with optional single `t` or a per-sample vector of times.
+`x` may be a 3-vector or a batched matrix (see [`GeoCotrans`](@ref) conventions).
 """
 function transform end
 
@@ -32,23 +32,35 @@ for f in (:car2sph, :car2sphd, :sph2car, :sphd2car)
     @eval export $f
 end
 
-# `rotations.jl` defines each edge in one direction; a chain `(A, B, C)` composes A → B → C.
-const edges = ((:GEI, :GEO), (:GEI, :GSM), (:GSE, :GSM), (:GEO, :MAG), (:GSM, :SM))
-const chains = (
-    (:GEI, :GSM, :SM),
-    (:GEO, :GEI, :GSM),
-    (:GEO, :GEI, :SM),
-    (:GEI, :GEO, :MAG),
-    (:SM, :GEI, :MAG),
-)
+# `rotations.jl` defines each edge in one direction; every other pair composes edges along a shortest path
+const edges = ((:GEI, :GEO), (:GEI, :GSM), (:GEI, :GSE), (:GSE, :GSM), (:GEO, :MAG), (:GSM, :SM))
 
 for (A, B) in edges
     @eval rotation(::Type{$B}, ::Type{$A}, t) = transpose(rotation($A, $B, t))
 end
 
-for (A, B, C) in chains
-    @eval rotation(::Type{$A}, ::Type{$C}, t) = rotation($B, $C, t) * rotation($A, $B, t)
-    @eval rotation(::Type{$C}, ::Type{$A}, t) = transpose(rotation($A, $C, t))
+function _shortest_path(from, to)
+    prev = Dict(from => from)
+    queue = [from]
+    while !haskey(prev, to)
+        u = popfirst!(queue)
+        for (a, b) in edges, (p, q) in ((a, b), (b, a))
+            p == u && !haskey(prev, q) && (prev[q] = u; push!(queue, q))
+        end
+    end
+    path = [to]
+    while path[end] != from
+        push!(path, prev[path[end]])
+    end
+    return reverse!(path)
+end
+
+for A in FRAME_NAMES, B in FRAME_NAMES
+    path = _shortest_path(A, B)
+    length(path) > 2 || continue
+    R = foldl((R, i) -> :(rotation($(path[i]), $(path[i + 1]), t) * $R), 2:(length(path) - 1);
+        init = :(rotation($(path[1]), $(path[2]), t)))
+    @eval rotation(::Type{$A}, ::Type{$B}, t) = $R
 end
 
 @inline transform(To, x::CoordinateVector{F}, t) where {F} = transform(F => To, x, t)
@@ -58,7 +70,15 @@ end
     return frametype(p.second)((rotation(p, t) * _cartesian(x))...)
 end
 
-@inline transform(p::Pair, x, t) = rotation(p, t) * x
+# branching on each concrete frame known at runtime keeps every path type-stable
+@eval @inline _split(f, x) = $(foldr((n, ex) -> :(x isa $n ? f($n()) : $ex), FRAME_NAMES; init = :(f(x))))
+
+@inline transform(p::Pair, x, t) =
+    _split(_checked_frame(p.first)) do from
+        _split(_checked_frame(p.second)) do to
+            rotation(from => to, t) * x
+        end
+    end
 
 # matrix path: `t` follows broadcast rules as in `mapsamples`
 @inline function transform(p::Pair, A::AbstractMatrix, t; dim=nothing, dims=nothing)
@@ -77,12 +97,13 @@ _sampledim(A, ::Nothing) = something(tdimnum(A), 2)
 @inline transform(p::Pair, A::AbstractMatrix; dim=nothing) = transform(p, A, times(A, dim); dim)
 
 # barrier: a `Pair` of frame types would dispatch dynamically on every sample
-_rotate(p::Pair) = _rotate(frame(p.first), frame(p.second))
+_rotate(p::Pair) = _rotate(_checked_frame(p.first), _checked_frame(p.second))
 _rotate(from, to) = (x, t) -> rotation(from => to, t) * SVector{3}(x)
 
-# both directions of every edge and chain
+# `coord_maps` is the name lookup SPEDAS ≤ 0.3 imports
 const coord_maps = Dict{Tuple{Symbol, Symbol}, Function}()
-for (A, B) in (edges..., map(c -> (c[1], c[3]), chains)...), (F1, F2) in ((A, B), (B, A))
+for F1 in FRAME_NAMES, F2 in FRAME_NAMES
+    F1 == F2 && continue
     a, b = Symbol(lowercase(String(F1))), Symbol(lowercase(String(F2)))
     func = Symbol(a, "2", b)
     doc = """$(func)(x, t)
