@@ -43,7 +43,7 @@ _cartesian(x::CoordinateVector{F, R}) where {F, R} = to_cartesian(R(), x)
 StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1}}, ::Type{T2}, ::Size) where {C, R, T1, T2} =
     CoordinateVector{C, R, T2}
 
-const FRAME_NAMES = (:GEI, :GEO, :GSM, :GSE, :MAG, :SM)
+const FRAME_NAMES = (:GEI, :GEO, :GSM, :GSE, :MAG, :SM, :J2000)
 
 for sys in FRAME_NAMES
     doc = """$(FrameDescriptions[sys])
@@ -86,12 +86,13 @@ end
     $((:(_iequal(s, $(String(n))) && return $n()) for n in FRAME_NAMES)...)
     return nothing
 end
-# `& 0xdf` clears the ASCII case bit, and no other byte maps onto A-Z
+# ASCII case-insensitive against an uppercase name; `⊻ 0x20` flips the case bit, valid only for letters
 function _iequal(s, upper)
     s = codeunits(s)
     length(s) == ncodeunits(upper) || return false
     for i in eachindex(s)
-        s[i] & 0xdf == codeunit(upper, i) || return false
+        c, u = s[i], codeunit(upper, i)
+        c == u || (c ⊻ 0x20 == u && UInt8('A') <= u <= UInt8('Z')) || return false
     end
     return true
 end

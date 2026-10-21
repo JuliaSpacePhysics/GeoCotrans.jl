@@ -33,7 +33,7 @@ for f in (:car2sph, :car2sphd, :sph2car, :sphd2car)
 end
 
 # `rotations.jl` defines each edge in one direction; every other pair composes edges along a shortest path
-const edges = ((:GEI, :GEO), (:GEI, :GSM), (:GEI, :GSE), (:GSE, :GSM), (:GEO, :MAG), (:GSM, :SM))
+const edges = ((:GEI, :GEO), (:GEI, :GSM), (:GEI, :GSE), (:GSE, :GSM), (:GEO, :MAG), (:GSM, :SM), (:J2000, :GEI))
 
 for (A, B) in edges
     @eval rotation(::Type{$B}, ::Type{$A}, t) = transpose(rotation($A, $B, t))

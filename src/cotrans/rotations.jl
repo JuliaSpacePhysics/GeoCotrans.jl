@@ -60,3 +60,31 @@ function rotation(::Type{GSM}, ::Type{SM}, time)
     s, c = sincos(dipole_tilt(time))
     return SA[c 0 -s; 0 1 0; s 0 c]
 end
+
+_R1(α) = (s = sin(α); c = cos(α); SA[1 0 0; 0 c s; 0 -s c])
+_R2(α) = (s = sin(α); c = cos(α); SA[c 0 -s; 0 1 0; s 0 c])
+_R3(α) = (s = sin(α); c = cos(α); SA[c s 0; -s c 0; 0 0 1])
+
+# J2000 → GEI: IAU 1976 precession to the mean equator and equinox of date, then nutation to the true ones, as in
+# SPEDAS `spd_make_j2000_matrix_vec`. Meeus (1998, ch. 22) four-term nutation is good to 0.5″, well under the
+# 0.01° of the sun series; UTC stands in for TT (~1 min, < 0.001″ of precession).
+function rotation(::Type{J2000}, ::Type{GEI}, time)
+    T = (_days1900(time) - 36525) / 36525  # Julian centuries since J2000.0
+    as = deg2rad(1 / 3600)
+    ζ = as * T * (2306.2181 + T * (0.30188 + 0.017998T))
+    z = as * T * (2306.2181 + T * (1.09468 + 0.018203T))
+    θ = as * T * (2004.3109 - T * (0.42665 + 0.041833T))
+    ε₀ = as * (84381.448 - T * (46.815 + T * (0.00059 - 0.001813T)))
+    Ω = deg2rad(125.04452 - 1934.136261T)
+    L = deg2rad(280.4665 + 36000.7698T)
+    L′ = deg2rad(218.3165 + 481267.8813T)
+    sΩ, cΩ = sincos(Ω)
+    s2Ω, c2Ω = sincos(2Ω)
+    s2L, c2L = sincos(2L)
+    s2L′, c2L′ = sincos(2L′)
+    Δψ = as * (-17.2 * sΩ - 1.32 * s2L - 0.23 * s2L′ + 0.21 * s2Ω)
+    Δε = as * (9.2 * cΩ + 0.57 * c2L + 0.1 * c2L′ - 0.09 * c2Ω)
+    P = _R3(-z) * _R2(θ) * _R3(-ζ)
+    N = _R1(-(ε₀ + Δε)) * _R3(-Δψ) * _R1(ε₀)
+    return N * P
+end

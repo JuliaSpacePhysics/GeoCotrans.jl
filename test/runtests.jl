@@ -220,6 +220,7 @@ end
     @test frame(:GSE) === frame("gse") === frame("Gse") === GSE()
     @test frame(:spherical) === frame("foo") === nothing
     @test transform("gse" => :SM, x, t) ≈ transform(GSE => SM, x, t)
+    @test transform("j2000" => GEI, x, t) ≈ transform(J2000 => GEI, x, t)
     @test_throws "unknown reference frame :gse" transform(:gse => GEO, x, t)
     @test_throws "unknown reference frame :foo" transform(:foo => GEO, [x x], [t, t])
 end
@@ -283,4 +284,15 @@ end
 @testitem "Aqua" begin
     using Aqua
     Aqua.test_all(GeoCotrans)
+end
+
+@testitem "J2000" begin
+    using Dates, LinearAlgebra
+    import IRBEM
+    x = normalize([1.0, 2.0, 3.0])
+    arcsec(a, b) = rad2deg(acos(clamp(dot(normalize(a), normalize(b)), -1, 1))) * 3600
+    # precession alone reaches ~1000″ by these dates; IRBEM uses the full nutation series
+    for t in (DateTime(1985, 3, 1), DateTime(2000, 1, 1, 12), DateTime(2026, 7, 4, 5))
+        @test arcsec(transform(J2000 => GEI, x, t), IRBEM.transform(t, x, "J2000", "GEI")) < 0.5
+    end
 end
