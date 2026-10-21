@@ -96,14 +96,13 @@ end
 @testitem "find_magequator" begin
     using OrdinaryDiffEqTsit5, Dates, LinearAlgebra
     using TsyganenkoModels
-    import IRBEM
     t = DateTime(2020, 1, 1)
     pos = GEO(3.0, 0.5, 1.2)
     eq = find_magequator(pos, t, Tsit5())
     @test norm(igrf(eq.pos, t; from = GEO())) ≈ eq.Bmin
-    ref = IRBEM.find_magequator(t, collect(pos), "GEO", (;); kext = 0)
-    @test eq.pos ≈ ref.XGEO rtol = 1.0e-3
-    @test eq.Bmin ≈ ref.Bmin rtol = 1.0e-3
+    # IRBEM Fortran e7cecb0 `find_magequator(t, collect(pos); coord = "GEO", kext = 0)`
+    @test eq.pos ≈ [3.6137059160487484, 0.7826024395774225, 0.06390538785274343] rtol = 1.0e-3
+    @test eq.Bmin ≈ 567.5666905062388 rtol = 1.0e-3
 
     # open field lines (incl. exactly on the z-axis) -> nothing
     @test isnothing(find_magequator(GEO(0.3, 0.0, 1.5), t, Tsit5()))
