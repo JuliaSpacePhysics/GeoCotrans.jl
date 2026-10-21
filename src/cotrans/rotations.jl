@@ -1,12 +1,14 @@
-# Direct rotations of the frame graph in `cotrans.jl`, in the notation of Hapgood (1992) / UCL `geo_tran`:
-# `<ζ, Z>` rotates by angle ζ about axis Z.
+# `_R1`, `_R2`, `_R3` rotate axes about X, Y, Z
+# Hapgood (1992) / UCL `geo_tran` `<ζ, X>`, `<ζ, Y>`, `<ζ, Z>` are `_R1(ζ)`, `_R2(-ζ)`, `_R3(ζ)`.
+@inline _R1(s, c) = SA[1 0 0; 0 c s; 0 -s c]
+@inline _R2(s, c) = SA[c 0 -s; 0 1 0; s 0 c]
+@inline _R3(s, c) = SA[c s 0; -s c 0; 0 0 1]
+@inline _R1(α) = _R1(sincos(α)...)
+@inline _R2(α) = _R2(sincos(α)...)
+@inline _R3(α) = _R3(sincos(α)...)
 
 # GEI → GEO: T1 = <θ, Z> with Greenwich sidereal time θ (radians), or derived from a time.
-@inline function rotation(::Type{GEI}, ::Type{GEO}, gst)
-    s, c = sincos(gst)
-    return SA[c s 0; -s c 0; 0 0 1]
-end
-
+@inline rotation(::Type{GEI}, ::Type{GEO}, gst) = _R3(gst)
 rotation(::Type{GEI}, ::Type{GEO}, time::AbstractTime) = rotation(GEI, GEO, gmst(time))
 
 # GEI → GSM: rows are the GSM axes in GEI, as in IRBEM
@@ -22,12 +24,10 @@ function _ecliptic_pole_gei(ε)
     return SA[0, -s, c]
 end
 
-# GEI → GSE: T2 = <λ, Z> * <ε, X>; rows are the GSE axes in GEI (X sunward, Z the ecliptic pole).
+# GEI → GSE: T2 = <λ, Z> * <ε, X>: tilt to the ecliptic by the obliquity ε, then turn X to the Sun's longitude λ.
 function rotation(::Type{GEI}, ::Type{GSE}, time)
     λ, ε = sun_ecliptic(time)
-    x = _sun_gei(λ, ε)
-    z = _ecliptic_pole_gei(ε)
-    return transpose(hcat(x, z × x, z))
+    return _R3(λ) * _R1(ε)
 end
 
 # GSE → GSM: T3 = <-ψ, X>, aligning GSE Z with GSM Z.
@@ -38,32 +38,19 @@ function rotation(::Type{GSE}, ::Type{GSM}, time)
     n = norm(y)
     pole = _ecliptic_pole_gei(ε)
     # pole ⟂ sun, so pole ⋅ (GSM Z) reduces to pole ⋅ d / n
-    c, s = dot(pole, d) / n, dot(pole, y) / n
-    return SA[1 0 0; 0 c s; 0 -s c]
+    s, c = dot(pole, y) / n, dot(pole, d) / n
+    return _R1(s, c)
 end
 
-# GEO → MAG: T5 = <lat - 90°, Y> * <long, Z> for dipole pole (lat, long), i.e. R_y(θ) * R_z(-φ) with
-# dipole colatitude θ and longitude φ: R_z(-φ) brings the dipole meridian to XZ, R_y(θ) the dipole to Z.
+# GEO → MAG: T5 = <lat - 90°, Y> * <long, Z> for dipole pole (lat, long); with dipole colatitude θ and longitude φ,
+# `_R3` brings the dipole meridian to XZ, `_R2` the dipole to Z.
 function rotation(::Type{GEO}, ::Type{MAG}, time)
     θ, φ = calc_dipole_angle(time)
-    sθ, cθ = sincos(θ)
-    sφ, cφ = sincos(φ)
-    return SA[
-        cθ * cφ cθ * sφ -sθ
-        -sφ cφ 0
-        sθ * cφ sθ * sφ cθ
-    ]
+    return _R2(θ) * _R3(φ)
 end
 
 # GSM → SM: T4 = <-μ, Y> with dipole tilt μ.
-function rotation(::Type{GSM}, ::Type{SM}, time)
-    s, c = sincos(dipole_tilt(time))
-    return SA[c 0 -s; 0 1 0; s 0 c]
-end
-
-_R1(α) = (s = sin(α); c = cos(α); SA[1 0 0; 0 c s; 0 -s c])
-_R2(α) = (s = sin(α); c = cos(α); SA[c 0 -s; 0 1 0; s 0 c])
-_R3(α) = (s = sin(α); c = cos(α); SA[c s 0; -s c 0; 0 0 1])
+rotation(::Type{GSM}, ::Type{SM}, time) = _R2(dipole_tilt(time))
 
 # J2000 → GEI: IAU 1976 precession to the mean equator and equinox of date, then nutation to the true ones, as in
 # SPEDAS `spd_make_j2000_matrix_vec`. Meeus (1998, ch. 22) four-term nutation is good to 0.5″, well under the
