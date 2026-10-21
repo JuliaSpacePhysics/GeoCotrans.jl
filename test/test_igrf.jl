@@ -55,7 +55,8 @@ end
     x = r * R🜨 * u"km"
     m = IGRF()
     @test m(uconvert(u"m", x), θ, φ, t) ≈ m(r, θ, φ, t)
-    @test m(uconvert(u"m", x), θ, φ, t; from = GEO()) ≈ m(r, θ, φ, t)
+    @test m(x, θ, φ, t; from = GSM()) ≈ m(r, θ, φ, t; from = (GSM(), Spherical()))
+    @test_throws ArgumentError m(x, θ, φ, t; from = :cartesian)
     @test m(x, 0u"km", 2x, t; from = GSM()) ≈ m(r, 0.0, 2r, t; from = GSM())
 end
 
@@ -134,7 +135,11 @@ end
         @test model(GDZ(90, 0, 100), t) ≈ igrf_Benu(GDZ(90, 0, 100), t)
         gdz_array = [𝐫;; 𝐫]
         @test model(gdz_array, [t, t]; from = GDZ()) ≈ [B_true B_true]
-        @test model(gdz_array, t; from = GDZ()) ≈ [B_true B_true]
+        @test model(gdz_array, t; from = Geodetic()) ≈ [B_true B_true]
+        @test model(gdz_array, t; from = Geodetic) ≈ [B_true B_true]
+        # `Geodetic()` implies GEO, whatever the input frame
+        @test model(transform(GSM, GEO(𝐫), t), t; to = Geodetic()) ≈ B_true
+        @test_throws ArgumentError model(𝐫, t; to = (GSM(), Geodetic()))
         # igrf_Benu(𝐫, t) bypass conversion using Cartesian so should be faster
         @info @b igrf_Benu($𝐫, $t), $model($𝐫, $t)
     end

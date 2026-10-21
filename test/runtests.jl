@@ -21,10 +21,12 @@ end
     using Dates
     using GeoCotrans: getcsys, GDZ, GEO, Geodetic, representation
 
-    𝐫 = GDZ(0, 60, 5)
+    𝐫 = GDZ(; lon = 60, lat = 0, alt = 5)
     @test getcsys(𝐫) == getcsys(GDZ) == (GEO(), Geodetic())
     @test 𝐫 .* 2.0 isa GeoCotrans.CoordinateVector{GEO, Geodetic}
     @test representation(𝐫) == Geodetic()
+    @test_throws ArgumentError GDZ(; alt = 5)
+    @test_throws ArgumentError GeoCotrans.CoordinateVector{GSM, Geodetic}(0, 60, 5)
 end
 
 @testitem "gse2gsm" begin
@@ -251,6 +253,15 @@ end
     @test transform(GEO => GSM, GDZ(60.0, 5.0, 100.0), t) ≈ geo2gsm(GeoCotrans.gdz2car(60.0, 5.0, 100.0), t)
     @test transform(GEI => GSM, GeoCotrans.CoordinateVector{GEI, Spherical}(2.0, 0.5, 1.0), t) ≈ R * sph2car(2.0, 0.5, 1.0)
     @test GEO(GDZ(60.0, 5.0, 100.0)) ≈ GeoCotrans.gdz2car(60.0, 5.0, 100.0)
+    g = GDZ(60.0, 5.0, 100.0)
+    g_gsm = geo2gsm(GeoCotrans.gdz2car(60.0, 5.0, 100.0), t)
+    g_back = transform(GDZ(), GSM(g_gsm), t)
+    @test g_back isa GeoCotrans.CoordinateVector{GEO, Geodetic} && g_back ≈ g
+    # raw components take the spec's representation
+    @test transform(GDZ() => GSM, collect(g), t) ≈ g_gsm
+    @test transform(GEI => (GSM(), Spherical()), x, t) ≈ car2sph(R * x)
+    @test transform(GDZ() => GSM, [g g], t) ≈ [g_gsm g_gsm]
+    @test transform(GSM => GDZ(), [g_gsm g_gsm], [t, t]) ≈ [g g]
 
     # frame mismatch is caught
     @test_throws AssertionError transform(GSE => GSM, gei, t)

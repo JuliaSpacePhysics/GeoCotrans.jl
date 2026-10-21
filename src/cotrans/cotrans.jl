@@ -18,6 +18,7 @@ rotation(::Type{F}, ::Type{F}, ::Any) where {F} = one(SMatrix{3, 3, Float64})
 
 Transform `x` from reference frame `from` to `to` at time(s) `t`, e.g. `transform(GEO() => GSM(), x, t)`.
 `from` can be omitted for `x::CoordinateVector` (e.g. `GEO(x, y, z)`).
+`from`/`to` may carry a representation, e.g. `GDZ() => GSM` or `GSM => (GSE(), Spherical())`; otherwise components are Cartesian.
 
 `x` may be a 3-vector or a batched matrix (see [`GeoCotrans`](@ref) conventions).
 """
@@ -65,30 +66,33 @@ end
 
 @inline transform(To, x::CoordinateVector{F}, t) where {F} = transform(F => To, x, t)
 
-@inline function transform(p::Pair, x::CoordinateVector{F}, t) where {F}
-    @assert F == frametype(p.first)
-    return frametype(p.second)((rotation(p, t) * _cartesian(x))...)
+@inline function transform(p::Pair, x::CoordinateVector{F, R}, t) where {F, R}
+    @assert _csys(p.first)[1] isa F
+    f1, r1 = _csys(p.second)
+    return CoordinateVector{typeof(f1), typeof(r1)}(_converter((F(), R()), (f1, r1), t)(x)...)
 end
 
-# branching on each concrete frame known at runtime keeps every path type-stable
+# branching on each concrete frame known at runtime (e.g. from names) keeps `R` inferable
 @eval @inline _split(f, x) = $(foldr((n, ex) -> :(x isa $n ? f($n()) : $ex), FRAME_NAMES; init = :(f(x))))
+_rotation(f0, f1, t) = _split(a -> _split(b -> rotation(a => b, t), f1), f0)
 
-@inline transform(p::Pair, x, t) =
-    _split(_checked_frame(p.first)) do from
-        _split(_checked_frame(p.second)) do to
-            _mul(rotation(from => to, t), x)
-        end
-    end
+# per-sample map of components from `(f0, r0)` to `(f1, r1)` at time `t`
+@inline _converter(p::Pair, t) = _converter(_csys(p.first), _csys(p.second), t)
+@inline function _converter((f0, r0), (f1, r1), t)
+    R = _rotation(f0, f1, t)
+    return x -> from_cartesian(r1, R * to_cartesian(r0, x))
+end
 
-_mul(R, x) = R * x
-_mul(R, x::AbstractArray) = rebuild(x, R * unwrap(x))
+@inline transform(p::Pair, x, t) = _apply(_converter(p, t), x)
+_apply(g, x) = g(x)
+_apply(g, x::AbstractArray) = rebuild(x, g(unwrap(x)))
 
 # each element is one sample; `t` broadcasts as in the matrix path
-function transform(p::Pair, x::AbstractVector{<:AbstractVector}, t)
+@inline function transform(p::Pair, x::AbstractVector{<:AbstractVector}, t)
     U, bt = unwrap(x), Base.broadcastable(t)
     isempty(axes(bt)) || return rebuild(x, _rotate(p).(U, bt))
-    R = rotation(p, bt[])
-    return rebuild(x, map(v -> R * SVector{3}(v), U))
+    g = _converter(p, bt[])
+    return rebuild(x, map(v -> g(SVector{3}(v)), U))
 end
 
 # matrix path: `t` follows broadcast rules as in `mapsamples`
@@ -96,7 +100,12 @@ end
     dim = _sampledim(A, @something dim dims Some(nothing))
     bt = Base.broadcastable(t)
     isempty(axes(bt)) || return mapsamples(_rotate(p), A, bt; dim)
-    R, U = rotation(p, bt[]), unwrap(A)
+    (f0, r0), (f1, r1) = _csys(p.first), _csys(p.second)
+    if !(r0 isa Cartesian3 && r1 isa Cartesian3)
+        g = _converter((f0, r0), (f1, r1), bt[])
+        return mapsamples(x -> g(SVector{3}(x)), A; dim)
+    end
+    R, U = _rotation(f0, f1, bt[]), unwrap(A)
     return rebuild(A, dim == 2 ? R * U : transpose(R * transpose(U)))
 end
 
@@ -108,8 +117,8 @@ _sampledim(A, ::Nothing) = something(tdimnum(A), 2)
 @inline transform(p::Pair, A::AbstractMatrix; dim=nothing) = transform(p, A, times(A, dim); dim)
 
 # barrier: a `Pair` of frame types would dispatch dynamically on every sample
-_rotate(p::Pair) = _rotate(_checked_frame(p.first), _checked_frame(p.second))
-_rotate(from, to) = (x, t) -> rotation(from => to, t) * SVector{3}(x)
+_rotate(p::Pair) = _rotate(_csys(p.first), _csys(p.second))
+_rotate(c0, c1) = (x, t) -> _converter(c0, c1, t)(SVector{3}(x))
 
 # `coord_maps` is the name lookup SPEDAS ≤ 0.3 imports
 const coord_maps = Dict{Tuple{Symbol, Symbol}, Function}()

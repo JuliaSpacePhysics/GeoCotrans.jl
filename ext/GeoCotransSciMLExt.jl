@@ -1,6 +1,6 @@
 module GeoCotransSciMLExt
 using SciMLBase
-using GeoCotrans: IGRF, getcsys, rotation, frame, Cartesian3
+using GeoCotrans: IGRF, getcsys, rotation, transform, Cartesian3, _csys
 using StaticArrays
 using LinearAlgebra: LinearAlgebra, normalize, norm
 
@@ -9,11 +9,10 @@ import GeoCotrans: trace, find_magequator
 # Integrate in the model's native frame (Cartesian) so the per-call frame rotation is computed once
 function native_field(model, pos, t, from)
     SV3 = SVector{3,Float64}
-    f_model = getcsys(model)[1]
-    f_from = @something frame(from) f_model
-    R = rotation(f_model => f_from, t)
-    u0 = SV3(R' * SV3(pos))
-    csys = (f_model, Cartesian3())
+    csys = (getcsys(model)[1], Cartesian3())
+    from = _csys(pos, _csys(from, csys))
+    u0 = SV3(transform(from => csys, pos, t))
+    R = rotation(csys[1] => from[1], t)
     B = r -> SV3(model(r, t; from=csys, to=csys))
     return u0, B, R
 end
@@ -70,7 +69,7 @@ function find_magequator(pos, t, solver; model=IGRF(), from=getcsys(pos), r0=1.0
         u -> (Bu=B(u); nb=norm(Bu); (norm(B(u + (ε / nb) * Bu)) - nb) / ε)
     end
     g0 = dBds(u0)
-    g0 == 0 && return (; pos=SVector{3,Float64}(pos), Bmin=norm(B(u0)), s=0.0)
+    g0 == 0 && return (; pos= R * u0, Bmin=norm(B(u0)), s=0.0)
     dir = -sign(g0)  # walk downhill in |B|
     # terminate at the upcrossing of d|B|/ds along the trace;
     # interp_points=2 since |B| extrema are ~Re apart, far coarser than the steps
