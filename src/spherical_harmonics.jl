@@ -15,11 +15,28 @@ B_φ = -\\frac{1}{r\\sin θ}\\frac{∂V}{∂φ}
 ```
 """
 @inline function evalsph(coeffs, r, θ, φ, max_degree, max_order = max_degree)
+    r, θ, φ = float.(promote(r, θ, φ))
+    return _evalsph(coeffs, inv(r), sincos(θ)..., sincos(φ)..., max_degree, max_order)
+end
+
+# Cartesian position to Cartesian field: x, y, z give 1/r and the angles' trig without atan or sincos
+@inline function evalsph_car(coeffs, x, y, z, max_degree, max_order = max_degree)
+    x, y, z = float.(promote(x, y, z))
+    ρ² = x^2 + y^2
+    ρ = sqrt(ρ²)
+    a = inv(sqrt(ρ² + z^2))
+    sinθ, cosθ = ρ * a, z * a
+    sinφ, cosφ = iszero(ρ) ? (zero(ρ), one(ρ)) : (y / ρ, x / ρ)
+    B = _evalsph(coeffs, a, sinθ, cosθ, sinφ, cosφ, max_degree, max_order)
+    return transpose(_sph_basis(sinθ, cosθ, sinφ, cosφ)) * B
+end
+
+@inline function _evalsph(coeffs, a, sinθ, cosθ, sinφ, cosφ, max_degree, max_order)
     G, H = coeffs.g, coeffs.h
     check_coeffs(G, max_degree, min(max_order, max_degree))
     check_coeffs(H, max_degree, min(max_order, max_degree))
     tab = schmidt_recurrence(max_degree)
-    return _evalsph(tab, G, H, float.(promote(r, θ, φ))..., max_degree, max_order)
+    return _evalsph(tab, G, H, a, sinθ, cosθ, sinφ, cosφ, max_degree, max_order)
 end
 
 Base.@propagate_inbounds get_coeff(G::AbstractMatrix, l, m) = G[l + 1, m + 1]
@@ -57,12 +74,9 @@ end
 # The Pₗᵐ(cos θ) recursion runs in l at fixed m and is fused with the field sums. 
 # For m ≥ 1 it carries Qₗᵐ = Pₗᵐ / sin θ, which makes B_φ and ∂Pₗᵐ/∂θ = l cos θ Qₗᵐ - s Qₗ₋₁ᵐ
 # division-free and finite at the poles. 
-# Recursed quantities are prescaled by (1/r)^(l+2), so the serial dependency per term is one multiply-add.
-@inline function _evalsph(tab, G, H, r::T, θ::T, φ::T, max_degree, max_order) where {T}
+# Recursed quantities are prescaled by a^(l+2), a = 1/r, so the serial dependency per term is one multiply-add.
+@inline function _evalsph(tab, G, H, a::T, sinθ::T, cosθ::T, sinφ::T, cosφ::T, max_degree, max_order) where {T}
     R = promote_type(T, eltype(G), eltype(H))
-    sinθ, cosθ = sincos(θ)
-    sinφ, cosφ = sincos(φ)
-    a = inv(r)
     a² = a * a
     acosθ, asinθ = a * cosθ, a * sinθ
     Br = Bθ = Bφ = zero(R)
@@ -209,6 +223,9 @@ getcsys(m::SphericalHarmonicModel) = (m.frame, Spherical())
 reference_radius(m::SphericalHarmonicModel) = m.radius
 
 evalmodel(m::SphericalHarmonicModel, r, θ, φ, t) = evalsph(_coeffs_at(m.coeffs, t), r, θ, φ, m.degree, m.order)
+evalmodel(m::SphericalHarmonicModel, ::Cartesian3, 𝐫, t) = evalsph_car(_coeffs_at(m.coeffs, t), 𝐫..., m.degree, m.order)
+# spherical only for spherical input in the model frame
+eval_csys(::SphericalHarmonicModel, csys, from) = from == csys ? csys : (csys[1], Cartesian3())
 _coeffs_at(c::GaussCoefficients, _) = c
 _coeffs_at(c::TimeVaryingGaussCoefficients, t) = c(t)
 
