@@ -1,12 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.7] - 2026-10-21
+
+### Changed
+
+- `transform` honors the representation in `from`/`to` (e.g. `GDZ() => GSM`, `GSM => GDZ()`); previously raw components were always read and returned as Cartesian.
+
+## [0.3.3] - 2026-10-13
 
 ### Changed
 
 - `evalsph` and IGRF evaluation are ~2.5× faster.
 - `evalsph` at the exact poles (θ = 0, π) returns the limit along the meridian; previously B_θ and B_φ were wrong there.
-- `transform` honors the representation in `from`/`to` (e.g. `GDZ() => GSM`, `GSM => GDZ()`); previously raw components were always read and returned as Cartesian.
 
 ## [0.3.0] - 2026-08-30
 
@@ -23,7 +28,8 @@
 - **Breaking**: refactor!: normalize IGRF radius input to Earth radii and extract spherical harmonics evaluation ([#21](https://github.com/JuliaSpacePhysics/GeoCotrans.jl/pull/21))
 - **Breaking**: refactor!: seperate “Coordinate Representation and Reference Frame ([#20](https://github.com/JuliaSpacePhysics/GeoCotrans.jl/issues/20))
 
-[unreleased]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/compare/v0.3.0...HEAD
+[0.3.7]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/releases/tag/v0.3.7
+[0.3.3]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/releases/tag/v0.3.3
 [0.3.0]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/releases/tag/v0.3.0
 [0.2.0]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/releases/tag/v0.2.0
 [0.1.1]: https://github.com/JuliaSpacePhysics/GeoCotrans.jl/releases/tag/v0.1.1
