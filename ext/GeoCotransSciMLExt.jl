@@ -23,6 +23,12 @@ function field_line_ode(u, p, s)
     return sgn * normalize(B(u))
 end
 
+# boundaries trigger on crossings, which a start outside [r0, rlim] never makes
+function check_start(u0, r0, rlim)
+    r = norm(u0)
+    r0 <= r <= rlim || throw(ArgumentError("start at r = $r Re is outside [r0, rlim] = [$r0, $rlim]"))
+end
+
 function boundary_callback(r0, rlim)
     inner_cb = ContinuousCallback(InnerBoundary(r0), terminate!)
     outer_cb = ContinuousCallback(OuterBoundary(rlim), terminate!)
@@ -51,6 +57,7 @@ function trace(
     kwargs...
 )
     u0, B, R = native_field(model, pos, t, from)
+    check_start(u0, r0, rlim)
     # FullSpecialize: DiffEqBase >= 7.21.2 type-erases callbacks of AutoSpecialize problems
     # and calls them via invokelatest (~3x allocations per trace)
     prob = ODEProblem{false,SciMLBase.FullSpecialize}(field_line_ode, u0, (0.0, maxs), (B, sign(dir)))
@@ -65,6 +72,7 @@ end
 
 function find_magequator(pos, t, solver; model=IGRF(), from=getcsys(pos), r0=1.0, rlim=10.0, maxs=100.0, kw...)
     u0, B, R = native_field(model, pos, t, from)
+    check_start(u0, r0, rlim)
     dBds = let B = B, ε = 1.0e-6
         u -> (Bu=B(u); nb=norm(Bu); (norm(B(u + (ε / nb) * Bu)) - nb) / ε)
     end
