@@ -32,10 +32,12 @@ _scale_pos(::Cartesian3, pos, s) = SVector{3, Float64}(pos[1] * s, pos[2] * s, p
 # Evaluate a model with automatic coordinate transformation.
 function evaluate_model(model, pos, t, from, model_csys, to; scale = nothing, kw...)
     pos_scaled = isnothing(scale) ? pos : _scale_pos(from[2], pos, scale)
-    # Transform input position to model's native system
-    model_pos = transform_position(from..., model_csys..., pos_scaled, t)
-    # Evaluate model
-    B = evalmodel(model, model_pos..., t; kw...)
-    # Transform field to output system
-    return transform_field(model_csys..., to..., B, model_pos, t)
+    csys = eval_csys(model, model_csys, from)
+    model_pos = transform_position(from..., csys..., pos_scaled, t)
+    B = evalmodel(model, csys[2], model_pos, t; kw...)
+    return transform_field(csys..., to..., B, model_pos, t)
 end
+
+# A model may also evaluate in other representations of its frame than `getcsys`
+eval_csys(model, csys, from) = csys
+evalmodel(m, ::AbstractRepresentation, 𝐫, t; kw...) = evalmodel(m, 𝐫..., t; kw...)

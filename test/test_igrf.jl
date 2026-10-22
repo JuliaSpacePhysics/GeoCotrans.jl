@@ -158,4 +158,12 @@ end
         @test model(rθφ, t; from = in_csys) == model(rθφ, t; from = in_csys, to = in_csys)
         @test model(rθφ, t; from = in_csys) ≈ car2sph(B_true, r)
     end
+
+    @testset "Cartesian input on the polar axis" begin
+        t = DateTime(2020)
+        for 𝐫 in (GEO(0.0, 0.0, 1.5), GEO(0.0, 0.0, -1.5))
+            rθφ = car2sph(𝐫)
+            @test model(𝐫, t) ≈ sph2car(model(rθφ, t; from = (GEO(), Spherical())), rθφ)
+        end
+    end
 end
