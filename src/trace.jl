@@ -14,7 +14,7 @@ export trace, find_magequator
 """
     trace(pos, t, solver; kwargs...) :: ODESolution
 
-Trace a magnetic field line through `pos` (Cartesian, Re) at time `t` with a SciML ODE `solver`, parameterized by arc length.
+Trace a magnetic field line through `pos` (in `from`) at time `t` with a SciML ODE `solver`, parameterized by arc length.
 
 # Keyword Arguments
 - `model = IGRF()`: Magnetic field model to use
@@ -30,7 +30,7 @@ Trace a magnetic field line through `pos` (Cartesian, Re) at time `t` with a Sci
 ```julia
 using GeoCotrans, OrdinaryDiffEqTsit5, Dates
 sol = trace(GEO(3.0, 0.0, 0.0), DateTime(2020, 1, 1), Tsit5())
-sol.u  # positions [Re] along the line; sol.t is arc length
+sol.u  # Cartesian positions [Re] in the frame of `from` along the line; sol.t is arc length
 ```
 """
 function trace end

@@ -12,10 +12,8 @@ function reference_radius end
 
 @inline function (m::MagneticFieldModel)(𝐫, t = nothing; from = nothing, to = nothing, kw...)
     model_csys = getcsys(m)
-    from_frame = @something frame(𝐫) frame(from) model_csys[1]
-    from_repr = @something representation(𝐫) representation(from) model_csys[2]
-    from_csys = (from_frame, from_repr)
-    to_csys = (@something(frame(to), from_frame), @something(representation(to), from_repr))
+    from_csys = _csys(𝐫, _csys(from, model_csys))
+    to_csys = _csys(to, from_csys)
     return evaluate_model(m, 𝐫, t, from_csys, model_csys, to_csys; kw...)
 end
 

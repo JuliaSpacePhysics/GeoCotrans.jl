@@ -43,6 +43,13 @@
         @test norm(sol.u[end]) ≈ 1.0 rtol = 0.1
         @test length(sol.u) > 10
     end
+
+    @testset "non-Cartesian input" begin
+        g = GDZ(60.0, 5.0, 10000.0)
+        sol = trace(GEO(GeoCotrans.gdz2car(60.0, 5.0, 10000.0)), t, Tsit5())
+        @test trace(g, t, Tsit5()).u[end] ≈ sol.u[end]
+        @test trace(collect(g), t, Tsit5(); from = GDZ()).u[end] ≈ sol.u[end]
+    end
 end
 
 

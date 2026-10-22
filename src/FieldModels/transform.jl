@@ -9,6 +9,7 @@ to_cartesian(::Cartesian3, r) = r
 to_cartesian(::Geodetic, r) = gdz2car(r...)
 from_cartesian(::Spherical, r) = car2sph(r)
 from_cartesian(::Cartesian3, r) = r
+from_cartesian(::Geodetic, r) = car2gdz(r)
 
 to_cartesian(::Spherical, B, r) = sph2car(B, r)
 to_cartesian(::Cartesian3, B, r) = B
@@ -16,18 +17,10 @@ from_cartesian(::Spherical, B, r) = car2sph(B, r)
 from_cartesian(::Cartesian3, B, r) = B
 from_cartesian(::Geodetic, B, r) = car2enu(B, r)
 
-function transform_to(::F0, ::F1, pos, t) where {F0, F1}
-    return F0 == F1 ? pos : transform(F0 => F1, pos, t)
-end
+transform_to(f0, f1, pos, t) = f0 == f1 ? pos : transform(f0 => f1, pos, t)
 
 function transform_position(f0, r0, f1, r1, 𝐫, t)
-    return if f0 == f1 && r0 == r1
-        𝐫
-    else
-        𝐫_car = to_cartesian(r0, 𝐫)
-        𝐫̂ = transform_to(f0, f1, 𝐫_car, t)
-        from_cartesian(r1, 𝐫̂)
-    end
+    return f0 == f1 && r0 == r1 ? 𝐫 : transform((f0, r0) => (f1, r1), 𝐫, t)
 end
 
 function transform_field(f0, r0, f1, r1, B, 𝐫, t)

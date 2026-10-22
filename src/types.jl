@@ -27,6 +27,7 @@ struct CoordinateVector{F, R, T} <: FieldVector{3, T}
     x::T
     y::T
     z::T
+    CoordinateVector{F, R, T}(x, y, z) where {F, R, T} = (_check_csys(F(), R()); new{F, R, T}(x, y, z))
 end
 
 function CoordinateVector{F, R}(x::T, y::T, z::T) where {F, R, T}
@@ -40,7 +41,7 @@ CoordinateVector{F, R}(x, y, z) where {F, R} =
 _cartesian(x) = x
 _cartesian(x::CoordinateVector{F, R}) where {F, R} = to_cartesian(R(), x)
 
-StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1}}, ::Type{T2}, ::Size) where {C, R, T1, T2} =
+StaticArrays.similar_type(::Type{CoordinateVector{C, R, T1}}, ::Type{T2}, ::Size{(3,)}) where {C, R, T1, T2} =
     CoordinateVector{C, R, T2}
 
 const FRAME_NAMES = (:GEI, :GEO, :GSM, :GSE, :MAG, :SM, :J2000)
@@ -98,11 +99,19 @@ function _iequal(s, upper)
 end
 frametype(::Type{F}) where {F <: AbstractReferenceFrame} = F
 frametype(x) = typeof(_checked_frame(x))
-function _checked_frame(x)
-    f = frame(x)
-    isnothing(f) && throw(ArgumentError("unknown reference frame $(repr(x))"))
-    return f
+_checked_frame(x) = @something frame(x) throw(ArgumentError("unknown reference frame $(repr(x))"))
+# geodetic coordinates are defined on the Earth's ellipsoid, so only in GEO
+_check_csys(f, ::Geodetic) = f isa GEO || throw(ArgumentError("geodetic coordinates are only defined in GEO, not $(repr(f))"))
+_check_csys(f, r) = nothing
+# `(frame, representation)` of a spec, falling back to `default`; geodetic implies GEO
+function _csys(x, (f0, r0) = (nothing, Cartesian3()))
+    r = @something representation(x) r0
+    f = @something frame(x) (r isa Geodetic ? GEO() : f0) _checked_frame(x)
+    _check_csys(f, r)
+    return f, r
 end
+# a name is a frame, so a runtime name leaves only the frame to `_split`
+_csys(x::Union{Symbol, AbstractString}) = (_checked_frame(x), Cartesian3())
 # get the coordinate representation
 representation(::Any) = nothing
 representation(s::Symbol) = if s == :spherical
@@ -117,5 +126,6 @@ end
 representation(::AbstractReferenceFrame) = Cartesian3()
 representation(::Type{<:AbstractReferenceFrame}) = Cartesian3()
 representation(r::AbstractRepresentation) = r
+representation(::Type{R}) where {R <: AbstractRepresentation} = R()
 representation(::CoordinateVector{F, R}) where {F, R} = R()
 representation(csys::Tuple) = representation(csys[2])
