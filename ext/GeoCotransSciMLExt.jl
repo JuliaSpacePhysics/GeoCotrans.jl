@@ -29,21 +29,13 @@ function check_start(u0, r0, rlim)
     r0 <= r <= rlim || throw(ArgumentError("start at r = $r Re is outside [r0, rlim] = [$r0, $rlim]"))
 end
 
-function boundary_callback(r0, rlim)
-    inner_cb = ContinuousCallback(InnerBoundary(r0), terminate!)
-    outer_cb = ContinuousCallback(OuterBoundary(rlim), terminate!)
-    return CallbackSet(inner_cb, outer_cb)
-end
+boundary_callback(r0, rlim) = ContinuousCallback(Shell(r0, rlim), terminate!)
 
-struct InnerBoundary{T}
+struct Shell{T}
     r0::T
-end
-(cb::InnerBoundary)(u, t, integrator) = norm(u) - cb.r0
-
-struct OuterBoundary{T}
     rlim::T
 end
-(cb::OuterBoundary)(u, t, integrator) = cb.rlim - norm(u)
+(cb::Shell)(u, t, integrator) = (r = norm(u); (r - cb.r0) * (cb.rlim - r))
 
 function trace(
     pos, t, solver;
