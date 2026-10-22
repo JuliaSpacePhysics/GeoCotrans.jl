@@ -2,6 +2,7 @@ using BenchmarkTools
 using Dates
 using DimensionalData
 using GeoCotrans
+using OrdinaryDiffEqTsit5
 
 const SUITE = BenchmarkGroup()
 
@@ -33,3 +34,7 @@ SUITE["mlt"] = BenchmarkGroup()
 SUITE["mlt"]["scalar"] = @benchmarkable get_mlt($GEO_POS, $T0)
 SUITE["mlt"]["batch-time-major"] = @benchmarkable get_mlt($POS_TIME_MAJOR, $TIMES; dim = 1)
 SUITE["mlt"]["dimensionaldata"] = @benchmarkable get_mlt($POS_DIMARRAY)
+
+SUITE["trace"] = BenchmarkGroup()
+SUITE["trace"]["igrf"] = @benchmarkable trace($(GEO(3.0, 0.0, 0.0)), $T0, $(Tsit5()))
+SUITE["trace"]["find_magequator"] = @benchmarkable find_magequator($(GEO(3.0, 0.5, 1.2)), $T0, $(Tsit5()))
