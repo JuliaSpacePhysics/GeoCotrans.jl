@@ -167,3 +167,10 @@ end
         end
     end
 end
+
+@testitem "LazyPoly" begin
+    using GeoCotrans: LazyPoly, LinearInterp
+    p = LinearInterp([1, 2], [3, 4], 0.5)
+    @test p == [2.5, 4.0]
+    @test eltype(p) == Float64
+end

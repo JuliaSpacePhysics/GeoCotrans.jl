@@ -117,17 +117,24 @@ end
     return SVector{3, R}(Br + sinθ * (S₀ + S₁), -Bθ - cosθ * S₁ + a * S₂, -Bφ)
 end
 
-struct LinearInterp{T, N, A <: AbstractArray{T, N}, B <: AbstractArray{T, N}, R} <: AbstractArray{T, N}
-    base::A
-    delta::B
-    ratio::R
+# Σⱼ terms[j] αʲ⁻¹ elementwise, lazily: `_evalsph` reads each coefficient once, so materializing saves nothing
+struct LazyPoly{T, N, A <: Tuple{Vararg{AbstractArray{<:Any, N}}}, R} <: AbstractArray{T, N}
+    terms::A
+    α::R
+    function LazyPoly(terms::Tuple{Vararg{AbstractArray}}, α)
+        allequal(map(axes, terms)) || throw(DimensionMismatch("polynomial terms differ in axes"))
+        T = promote_type(typeof(α), map(eltype, terms)...)
+        return new{T, ndims(first(terms)), typeof(terms), typeof(α)}(terms, α)
+    end
 end
 
-Base.size(li::LinearInterp) = size(li.base)
-@inline function Base.getindex(li::LinearInterp, i::Int...)
-    @boundscheck checkbounds(li, i...)
-    return @inbounds muladd(li.delta[i...], li.ratio, li.base[i...])
+Base.size(p::LazyPoly) = size(first(p.terms))
+@inline function Base.getindex(p::LazyPoly, i::Int...)
+    @boundscheck checkbounds(p, i...)
+    return evalpoly(p.α, map(c -> @inbounds(c[i...]), p.terms))
 end
+
+LinearInterp(base, delta, ratio) = LazyPoly((base, delta), ratio)
 
 coeff_size(degree) = (degree + 1) * (degree + 2) ÷ 2
 
@@ -160,23 +167,28 @@ end
 Base.show(io::IO, c::GaussCoefficients) = print(io, "GaussCoefficients(degree=", _degree(c.g), ", order=", _order(c.g), ")")
 
 """
+    TimeVaryingGaussCoefficients(epochs, pieces)
     TimeVaryingGaussCoefficients(epochs, coefficients)
 
-Gauss `coefficients` at sorted `epochs`; `c(t)` interpolates linearly and throws outside the epochs.
+Gauss coefficients piecewise polynomial in time between sorted `epochs` and throws outside them.
+On `[epochs[i], epochs[i + 1]]`, `c(t) = Σⱼ pieces[i][j] αʲ⁻¹` with `α = (t - epochs[i]) / (epochs[i + 1] - epochs[i])`.
+Given `coefficients` at the epochs, interpolates linearly.
 """
-struct TimeVaryingGaussCoefficients{T, C, D}
+struct TimeVaryingGaussCoefficients{T, P <: Tuple}
     epochs::Vector{T}
-    coefficients::Vector{C}
-    deltas::Vector{D}
+    pieces::Vector{P}
+    function TimeVaryingGaussCoefficients(epochs::Vector{T}, pieces::Vector{P}) where {T, P <: Tuple}
+        length(epochs) >= 2 || error("at least two epochs are required")
+        length(pieces) == length(epochs) - 1 || error("need one piece per interval between epochs")
+        issorted(epochs) || error("epochs must be sorted")
+        allequal(size(c.g) for p in pieces for c in p) || error("coefficient sets must have the same size")
+        return new{T, P}(epochs, pieces)
+    end
 end
 
-function TimeVaryingGaussCoefficients(epochs::Vector, coefficients::Vector)
-    length(epochs) == length(coefficients) || error("number of epochs must match number of coefficient sets")
-    length(epochs) >= 2 || error("at least two epochs are required")
-    issorted(epochs) || error("epochs must be sorted")
-    allequal(size(c.g) for c in coefficients) || error("coefficient sets must have the same size")
-    deltas = [GaussCoefficients(c1.g - c0.g, c1.h - c0.h) for (c0, c1) in zip(coefficients, @view coefficients[2:end])]
-    return TimeVaryingGaussCoefficients(epochs, coefficients, deltas)
+function TimeVaryingGaussCoefficients(epochs::Vector, coefficients::Vector{<:GaussCoefficients})
+    pieces = [(c0, GaussCoefficients(c1.g - c0.g, c1.h - c0.h)) for (c0, c1) in zip(coefficients, @view coefficients[2:end])]
+    return TimeVaryingGaussCoefficients(epochs, pieces)
 end
 
 @inline function (c::TimeVaryingGaussCoefficients)(t)
@@ -184,9 +196,9 @@ end
     t = eltype(eps)(t)
     first(eps) <= t <= last(eps) || _throw_epochs(c, t)
     i = min(searchsortedlast(eps, t), length(eps) - 1)
-    c0, δ = c.coefficients[i], c.deltas[i]
+    p = c.pieces[i]
     α = (t - eps[i]) / (eps[i + 1] - eps[i])
-    return GaussCoefficients(LinearInterp(c0.g, δ.g, α), LinearInterp(c0.h, δ.h, α))
+    return GaussCoefficients(LazyPoly(map(x -> x.g, p), α), LazyPoly(map(x -> x.h, p), α))
 end
 
 @noinline _throw_epochs(c, t) =
@@ -217,7 +229,7 @@ function SphericalHarmonicModel(name, coeffs; radius, frame, degree = nothing, o
 end
 
 _first_coeffs(c::GaussCoefficients) = c
-_first_coeffs(c::TimeVaryingGaussCoefficients) = first(c.coefficients)
+_first_coeffs(c::TimeVaryingGaussCoefficients) = first(first(c.pieces))
 
 getcsys(m::SphericalHarmonicModel) = (m.frame, Spherical())
 reference_radius(m::SphericalHarmonicModel) = m.radius
