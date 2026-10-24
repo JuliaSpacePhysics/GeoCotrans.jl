@@ -1,11 +1,10 @@
 using Test
 using TestItems, TestItemRunner
-@run_package_tests
 
-# https://github.com/spedas/pyspedas/blob/master/pyspedas/cotrans_tools/tests/test_cotrans.py
-# https://github.com/tsssss/geopack/blob/master/geopack/test_geopack1.py
+@run_package_tests filter = ti -> isempty(VERSION.prerelease) || !(:jet in ti.tags)
 
-@testitem "JET static analysis" begin
+
+@testitem "JET static analysis" tags = [:jet] begin
     using JET
     @test_call GeoCotrans.workload()
     @test_opt GeoCotrans.workload()
