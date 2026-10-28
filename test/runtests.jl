@@ -304,11 +304,16 @@ end
 
 @testitem "J2000" begin
     using Dates, LinearAlgebra
-    import IRBEM
     x = normalize([1.0, 2.0, 3.0])
     arcsec(a, b) = rad2deg(acos(clamp(dot(normalize(a), normalize(b)), -1, 1))) * 3600
-    # precession alone reaches ~1000″ by these dates; IRBEM uses the full nutation series
-    for t in (DateTime(1985, 3, 1), DateTime(2000, 1, 1, 12), DateTime(2026, 7, 4, 5))
-        @test arcsec(transform(J2000 => GEI, x, t), IRBEM.transform(t, x, "J2000", "GEI")) < 0.5
+    # IRBEM Fortran e7cecb0 `coord_trans("J2000", "GEI", t, x)`: IAU 1976 precession, full IAU 1980 nutation.
+    # Precession alone reaches ~1000″ by these dates
+    ref = (
+        DateTime(1985, 3, 1) => [0.2702382632081289, 0.5335923814770139, 0.801405297916069],
+        DateTime(2000, 1, 1, 12) => [0.2673158741653187, 0.534528373316755, 0.801761586469803],
+        DateTime(2026, 7, 4, 5) => [0.26198929418336253, 0.5360711560245921, 0.8024894550159279],
+    )
+    for (t, y) in ref
+        @test arcsec(transform(J2000 => GEI, x, t), y) < 0.5
     end
 end

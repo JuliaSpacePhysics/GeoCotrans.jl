@@ -30,7 +30,7 @@ plot(sol; idxs = (1, 2)) # Equatorial plane (X-Y)
 
 ## API
 
-Full API map with units and conventions: `@doc(GeoCotrans)`, or the [documentation](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/) (including [validation](https://juliaspacephysics.github.io/GeoCotrans.jl/dev/coords/) against IRBEM and PySPEDAS).
+Full API map with units and conventions: `@doc(GeoCotrans)`, or the [documentation](https://JuliaSpacePhysics.github.io/GeoCotrans.jl/dev/) ([comparison](https://juliaspacephysics.github.io/tutorials/coord_comparison/) with IRBEM and PySPEDAS).
 
 ## Reference
 
