@@ -25,6 +25,7 @@ Transform `x` from reference frame `from` to `to` at time(s) `t`, e.g. `transfor
 function transform end
 
 include("rotations.jl")
+include("gsw.jl")
 include("representations.jl")
 
 for f in (:car2sph, :car2sphd, :sph2car, :sphd2car)
@@ -69,8 +70,10 @@ end
 @inline function transform(p::Pair, x::CoordinateVector{F, R}, t) where {F, R}
     @assert _csys(p.first)[1] isa F
     f1, r1 = _csys(p.second)
-    return CoordinateVector{typeof(f1), typeof(r1)}(_converter((F(), R()), (f1, r1), t)(x)...)
+    return _tagged(f1, r1, _converter((F(), R()), (f1, r1), t)(x))
 end
+
+_tagged(f, r, x) = Base.issingletontype(typeof(f)) ? CoordinateVector{typeof(f), typeof(r)}(x...) : SVector{3}(x)
 
 # branching on each concrete frame known at runtime (e.g. from names) keeps `R` inferable
 @eval @inline _split(f, x) = $(foldr((n, ex) -> :(x isa $n ? f($n()) : $ex), FRAME_NAMES; init = :(f(x))))

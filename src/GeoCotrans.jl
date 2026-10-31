@@ -15,6 +15,7 @@ Transformations between geocentric reference frames, IGRF-14 geomagnetic field, 
 - [`GEI`](@ref): $(description(GEI))
 - [`MAG`](@ref): $(description(MAG))
 - [`SM`](@ref): $(description(SM))
+- [`GSW`](@ref)`(v)`: Geocentric Solar Wind reference frame.
 
 `GEO(x, y, z)` etc. build a [`CoordinateVector`](@ref) tagged with its frame. Representations `Cartesian3`, `Spherical`, `Geodetic` follow the conventions above; [`getcsys`](@ref) gives `(frame, representation)`.
 [`GDZ`](@ref) `(lat, lon, alt)` is the geodetic representation of `GEO`. [`gdz2sph`](@ref) converts it to spherical.
