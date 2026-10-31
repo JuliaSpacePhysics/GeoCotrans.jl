@@ -84,6 +84,7 @@ _rotation(f0, f1, t) = _split(a -> _split(b -> rotation(a => b, t), f1), f0)
 end
 
 @inline transform(p::Pair, x, t) = _apply(_converter(p, t), x)
+transform(p::Pair, x::Tuple, t) = transform(p, SVector(x), t)
 _apply(g, x) = g(x)
 _apply(g, x::AbstractArray) = rebuild(x, g(unwrap(x)))
 
