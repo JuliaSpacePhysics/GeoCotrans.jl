@@ -239,6 +239,7 @@ end
     # frames as instances are equivalent to types
     @test rotation(GEI() => GSM(), t) == R
     @test transform(GEI() => GSM, x, t) ≈ R * x
+    @test transform(GEI => GSM, Tuple(x), t) ≈ R * x
 
     # CoordinateVector: frame inferred via internal vector type
     gei = GeoCotrans.CoordinateVector{GEI, Cartesian3}(1.0, 2.0, 3.0)
