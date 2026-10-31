@@ -212,6 +212,20 @@ end
     end
 end
 
+@testitem "GSW" begin
+    using Dates
+    using LinearAlgebra
+    using GeoCotrans: dipole_tilt
+
+    t = DateTime(2015, 4, 15, 7, 5)
+    @test rotation(GSM => GSW([-400, 0, 0]), t) ≈ I
+    # Tsyganenko's 2015_OMNI_5m_with_GEO_RBF_TA17_drivers.dat: IMF (5.88, -7.21, -0.84) nT and tilt 0.0560 in GSW of
+    # OMNI's V (without Earth's orbital motion) from OMNI's Bx (GSE), By, Bz (GSM) and V (GSE)
+    f = GSW([-416.5, -44.6, 0.5])
+    @test transform(GSM => f, [6.61, -6.56, -0.68], t) ≈ [5.88, -7.21, -0.84] atol = 0.02
+    @test dipole_tilt(t, f) ≈ 0.0560 atol = 1.0e-4
+end
+
 @testitem "frames by name" begin
     using Dates
     using GeoCotrans: frame

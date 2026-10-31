@@ -60,15 +60,10 @@ end
 
 calc_dipole_gei(time) = rotation(GEO, GEI, time) * calc_dipole_geo(time)
 
-"""
-    dipole_tilt(time)
-
-Compute the dipole tilt angle μ (in radians).
-
-The dipole tilt is the angle between the dipole axis and the GSM Z-axis,
-positive when the north magnetic pole is tilted toward the Sun.
-"""
+# elevation of the dipole axis above the frame's Y-Z plane in radians; in GSM, positive when the north pole tilts sunward
 function dipole_tilt(time)
     # sin(μ) = dipole · sun
     return asin(dot(calc_dipole_gei(time), sun_gei(time)))
 end
+dipole_tilt(time, frame) = asin((rotation(GEI() => frame, time) * calc_dipole_gei(time))[1])
+dipole_tilt(time, ::GSM) = dipole_tilt(time)
