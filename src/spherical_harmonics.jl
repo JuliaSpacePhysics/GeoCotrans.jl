@@ -110,7 +110,7 @@ end
     return SVector{3, R}(Br + sinθ * (S₀ + S₁), -Bθ - cosθ * S₁ + a * S₂, -Bφ)
 end
 
-# Σⱼ terms[j] αʲ⁻¹ elementwise, lazily: `_evalsph` reads each coefficient once, so materializing saves nothing
+# Σⱼ terms[j] αʲ⁻¹ elementwise, lazily: `_evalsph` reads each coefficient once
 struct LazyPoly{T, N, A <: Tuple{Vararg{AbstractArray{<:Any, N}}}, R} <: AbstractArray{T, N}
     terms::A
     α::R
@@ -233,6 +233,11 @@ evalmodel(m::SphericalHarmonicModel, ::Cartesian3, 𝐫, t) = evalsph_car(_coeff
 eval_csys(::SphericalHarmonicModel, csys, from) = from == csys ? csys : (csys[1], Cartesian3())
 _coeffs_at(c::GaussCoefficients, _) = c
 _coeffs_at(c::TimeVaryingGaussCoefficients, t) = c(t)
+
+function freeze(m::SphericalHarmonicModel{<:TimeVaryingGaussCoefficients}, t)
+    c = m.coeffs(t)
+    return SphericalHarmonicModel(m.name, GaussCoefficients(collect(c.g), collect(c.h)), m.radius, m.degree, m.order, m.frame)
+end
 
 function Base.show(io::IO, m::SphericalHarmonicModel)
     print(io, "SphericalHarmonicModel(name=", m.name, ", radius=", m.radius, ", degree=", m.degree, ", order=", m.order)

@@ -58,6 +58,10 @@ end
     @test m(x, θ, φ, t; from = GSM()) ≈ m(r, θ, φ, t; from = (GSM(), Spherical()))
     @test_throws ArgumentError m(x, θ, φ, t; from = :cartesian)
     @test m(x, 0u"km", 2x, t; from = GSM()) ≈ m(r, 0.0, 2r, t; from = GSM())
+    a = GeoCotrans.at(m, t)
+    @test a(uconvert(u"m", x), θ, φ) ≈ m(r, θ, φ, t)
+    @test a([x, 0u"km", 2x]) ≈ m([x, 0u"km", 2x], t)
+    @test_throws ArgumentError a(x, θ, φ; from = :cartesian)
 end
 
 @testitem "evalsph is -∇V" begin

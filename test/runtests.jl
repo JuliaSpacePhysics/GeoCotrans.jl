@@ -1,13 +1,14 @@
 using Test
 using TestItems, TestItemRunner
 
-@run_package_tests filter = ti -> isempty(VERSION.prerelease) || !(:jet in ti.tags)
+@run_package_tests
 
-
-@testitem "JET static analysis" tags = [:jet] begin
+@testitem "JET static analysis" begin
     using JET
-    @test_call GeoCotrans.workload()
-    @test_opt GeoCotrans.workload()
+    if JET.JET_AVAILABLE
+        @test_call GeoCotrans.workload()
+        @test_opt GeoCotrans.workload()
+    end
 end
 
 @testitem "Frames and Representations" begin
@@ -210,6 +211,23 @@ end
             @test rotation(F2 => F3, t) * rotation(F1 => F2, t) ≈ rotation(F1 => F3, t)
         end
     end
+end
+
+@testitem "at" begin
+    using Dates
+    using GeoCotrans: at
+
+    t = DateTime(2001, 1, 1, 2, 3, 4)
+    x = GSM(3.0, 0.0, 1.0)
+    @test at(IGRF(), t)(x) ≈ IGRF()(x, t)
+    @test at(IGRF(), t)([3.0, 1.0, 0.5]) ≈ IGRF()([3.0, 1.0, 0.5], t)  # untagged: the model's representation
+    @test at(IGRF(), t, GSM())(x; to = GEO()) ≈ IGRF()(x, t; to = GEO())
+    a = at(IGRF(), t, GSM())
+    @test a(x...) ≈ IGRF()(x, t)
+    A = [3.0 4.0; 0.0 0.5; 1.0 1.5]
+    expected = hcat((IGRF()(p, t; from = GSM()) for p in eachcol(A))...)
+    @test a(A) ≈ expected
+    @test a(permutedims(A); dim = 1) ≈ permutedims(expected)
 end
 
 @testitem "GSW" begin

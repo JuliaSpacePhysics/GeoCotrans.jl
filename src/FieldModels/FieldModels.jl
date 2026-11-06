@@ -7,20 +7,59 @@ abstract type CompositeFieldModel <: MagneticFieldModel end
 
 function evalmodel end
 
+"""Precompute time-dependent state at `t`."""
+freeze(model, t) = model
+
+"""
+    at(model, t[, from]) -> callable `(𝐫; from, to)`
+
+Bind `model` to `t`, precomputing time-only state and the rotation from `from` to the model's frame.
+"""
+function at(model, t, from = nothing)
+    csys = _csys(from, getcsys(model))
+    f = csys[1]
+    m = freeze(model, t)
+    mf = getcsys(m)[1]
+    # decided by type so `R` is inferable; equal frame instances (e.g. `GSW`) get an identity matrix
+    R = Base.issingletontype(typeof(f)) && mf === f ? I : rotation(f => mf, t)
+    return At(m, csys, R, t)
+end
+
+struct At{M, C, R, T}
+    model::M
+    csys::C
+    R::R
+    t::T
+end
+
+(a::At)(𝐫; kw...) = _evaluate(a, 𝐫, a.t; kw...)
+(a::At)(x, y, z; kw...) = _evaluate(a, x, y, z, a.t; kw...)
+(a::At)(A::AbstractMatrix; dim = nothing, kw...) = mapsamples(x -> a(SVector{3}(x); kw...), A; dim = _sampledim(A, dim))
+getcsys(a::At) = a.csys
+eval_csys(a::At, csys, from) = (csys[1], Cartesian3())
+# without rotation the model may read any representation of its frame
+eval_csys(a::At{<:Any, <:Any, <:UniformScaling}, csys, from) = eval_csys(a.model, getcsys(a.model), from)
+function evalmodel(a::At, r::AbstractRepresentation, 𝐫, _; kw...)
+    csys = (getcsys(a.model)[1], r)
+    return transpose(a.R) * _evaluate(a.model, a.R * SVector{3}(𝐫), a.t; from = csys, to = csys, kw...)
+end
+Base.show(io::IO, a::At) = print(io, "at(", a.model, ", ", a.t, ", ", a.csys[1], ")")
+
 """Length unit in km or as a Unitful length. Models defining it accept Unitful positions."""
 function reference_radius end
+reference_radius(a::At) = reference_radius(a.model)
 
-@inline function (m::MagneticFieldModel)(𝐫, t = nothing; from = nothing, to = nothing, kw...)
+@inline (m::MagneticFieldModel)(𝐫, t = nothing; kw...) = _evaluate(m, 𝐫, t; kw...)
+
+@inline function _evaluate(m, 𝐫, t; from = nothing, to = nothing, kw...)
     model_csys = getcsys(m)
     from_csys = _csys(𝐫, _csys(from, model_csys))
     to_csys = _csys(to, from_csys)
     return evaluate_model(m, 𝐫, t, from_csys, model_csys, to_csys; kw...)
 end
 
-# Static evaluation (3 positional arguments)
-@inline function (m::MagneticFieldModel)(r, θ, φ, t = nothing; kw...)
-    return m(SA[r, θ, φ], t; kw...)
-end
+@inline (m::MagneticFieldModel)(x, y, z, t = nothing; kw...) = _evaluate(m, x, y, z, t; kw...)
+@inline _evaluate(m, x, y, z, t; kw...) = _evaluate(m, SA[x, y, z], t; kw...)
 
 @inline (m::MagneticFieldModel)(A::AbstractMatrix; dim = nothing, kw...) = m(A, times(A, dim); dim, kw...)
 @inline (m::MagneticFieldModel)(A::AbstractMatrix, ts; dim = nothing, kw...) = mapsamples(_evaluator(m, kw), A, ts; dim = _sampledim(A, dim))

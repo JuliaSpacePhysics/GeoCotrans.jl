@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `callback` in `trace`/`find_magequator` sees `u` in the Cartesian frame of `from` now instead of in model's native frame.
+
 ## [0.3.7] - 2026-10-21
 
 ### Changed
