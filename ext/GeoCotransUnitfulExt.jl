@@ -1,6 +1,7 @@
 module GeoCotransUnitfulExt
 
-using GeoCotrans: MagneticFieldModel, AbstractReferenceFrame, Cartesian3, Spherical, getcsys, reference_radius, _csys
+using GeoCotrans: AbstractReferenceFrame, Cartesian3, Spherical, getcsys, reference_radius, _csys
+import GeoCotrans: _evaluate
 using StaticArrays: SA
 using Unitful: Length, NoUnits, ustrip, @u_str
 
@@ -14,15 +15,15 @@ function _from(m, from, r)
     return (f, r)
 end
 
-function (m::MagneticFieldModel)(r::Length, θ, φ, t = nothing; from = nothing, kw...)
-    return m(_radii(r, reference_radius(m)), θ, φ, t; from = _from(m, from, Spherical()), kw...)
+function _evaluate(m, r::Length, θ, φ, t; from = nothing, kw...)
+    return _evaluate(m, _radii(r, reference_radius(m)), θ, φ, t; from = _from(m, from, Spherical()), kw...)
 end
 
-function (m::MagneticFieldModel)(𝐫::AbstractVector{<:Length}, t = nothing; from = nothing, kw...)
+function _evaluate(m, 𝐫::AbstractVector{<:Length}, t; from = nothing, kw...)
     R = reference_radius(m)
-    return m(map(x -> _radii(x, R), 𝐫), t; from = _from(m, from, Cartesian3()), kw...)
+    return _evaluate(m, map(x -> _radii(x, R), 𝐫), t; from = _from(m, from, Cartesian3()), kw...)
 end
 
-(m::MagneticFieldModel)(x::Length, y::Length, z::Length, t = nothing; kw...) = m(SA[x, y, z], t; kw...)
+_evaluate(m, x::Length, y::Length, z::Length, t; kw...) = _evaluate(m, SA[x, y, z], t; kw...)
 
 end

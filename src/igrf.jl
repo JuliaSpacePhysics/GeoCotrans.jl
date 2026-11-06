@@ -61,6 +61,7 @@ reference_radius(::IGRF) = reference_radius(IGRF14)
 evalmodel(::IGRF, r, θ, φ, t) = evalsph(IGRF14.coeffs(t), r, θ, φ, IGRF14.degree, IGRF14.order)
 evalmodel(::IGRF, ::Cartesian3, 𝐫, t) = evalsph_car(IGRF14.coeffs(t), 𝐫..., IGRF14.degree, IGRF14.order)
 eval_csys(::IGRF, csys, from) = eval_csys(IGRF14, csys, from)
+freeze(::IGRF, t) = freeze(IGRF14, t)
 
 """Alias for `IGRF()(args...; kw...)`; see [`IGRF`](@ref)."""
 igrf(args...; kw...) = IGRF()(args...; kw...)

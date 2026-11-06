@@ -14,8 +14,8 @@ Trace a magnetic field line through `pos` (in `from`) at time `t` with a SciML O
 - `r0 = 1.0`: Inner radial boundary (Earth radii)
 - `rlim = 10.0`: Outer radial boundary (Earth radii)
 - `maxs = 100.0`: Maximum arc length for integration
-- `from = getcsys(pos)`: Input coordinate system (Reference frame and coordinate representation)
-- `callback = nothing`: extra SciML callback(s), combined with the boundary callbacks; `u` is in the model's native frame
+- `from`: Input coordinate system (reference frame and representation); default: frame of `pos` if tagged, else the model's frame (Cartesian)
+- `callback = nothing`: extra SciML callback(s), combined with the boundary callbacks; `u` is Cartesian in the frame of `from`
 - Additional keyword arguments are passed to `solve()`
 
 # Example
