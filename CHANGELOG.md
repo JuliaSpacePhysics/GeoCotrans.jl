@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `getcsys(model)` is deprecated; use `GeoCotrans.native_csys(model)` (`getcsys` now only describes coordinates).
+
 ### Fixed
 
 - `callback` in `trace`/`find_magequator` sees `u` in the Cartesian frame of `from` now instead of in model's native frame.

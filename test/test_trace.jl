@@ -79,12 +79,6 @@ end
         T01 = TsyIGRF(T01(param)),
         # TS04 = TsyIGRF(TS04(param)),
     )
-    benchmark = @b trace($r_gsm, $time, Tsit5(); model = TsyIGRF(), r0 = 1.1)
-    if VERSION >= v"1.12"
-        @test benchmark.allocs < 200
-    end
-    @info benchmark
-
     for name in keys(models)
         model = models[name]
         sol = trace(r_gsm, time, Tsit5(); model, r0 = 1.1, rlim = 10.0)

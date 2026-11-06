@@ -55,12 +55,13 @@ m(rand(3, 6), Date.(2015:2020); from = GSM())   # 3×6 matrix, one time per colu
 """
 struct IGRF <: InternalFieldModel end
 
-getcsys(::IGRF) = getcsys(IGRF14)
+native_csys(::IGRF) = native_csys(IGRF14)
+Base.@deprecate getcsys(m::IGRF) GeoCotrans.native_csys(m)
 reference_radius(::IGRF) = reference_radius(IGRF14)
 # degree/order constant-fold from the global
 evalmodel(::IGRF, r, θ, φ, t) = evalsph(IGRF14.coeffs(t), r, θ, φ, IGRF14.degree, IGRF14.order)
 evalmodel(::IGRF, ::Cartesian3, 𝐫, t) = evalsph_car(IGRF14.coeffs(t), 𝐫..., IGRF14.degree, IGRF14.order)
-eval_csys(::IGRF, csys, from) = eval_csys(IGRF14, csys, from)
+eval_csys(::IGRF, from) = eval_csys(IGRF14, from)
 freeze(::IGRF, t) = freeze(IGRF14, t)
 
 """Alias for `IGRF()(args...; kw...)`; see [`IGRF`](@ref)."""

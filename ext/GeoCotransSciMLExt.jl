@@ -1,6 +1,6 @@
 module GeoCotransSciMLExt
 using SciMLBase
-using GeoCotrans: IGRF, at, getcsys, transform, Cartesian3, _csys
+using GeoCotrans: IGRF, at, native_csys, transform, Cartesian3, _csys
 using StaticArrays
 using LinearAlgebra: normalize, norm
 
@@ -9,7 +9,7 @@ import GeoCotrans: trace, find_magequator
 # Integrate in Cartesian `from` with the model at `t`
 function frozen_field(model, pos, t, from)
     SV3 = SVector{3,Float64}
-    native = (getcsys(model)[1], Cartesian3())  # untagged positions: Cartesian in the model's frame
+    native = (native_csys(model)[1], Cartesian3())  # untagged positions: Cartesian in the model's frame
     from = _csys(pos, _csys(from, native))
     csys = (from[1], Cartesian3())
     m = at(model, t, from[1])

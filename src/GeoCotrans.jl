@@ -54,7 +54,7 @@ export Spherical, Cartesian3, Geodetic, GDZ, gdz2sph
 export CoordinateVector, getcsys
 export get_mlt
 export trace, find_magequator
-VERSION >= v"1.11" && eval(Meta.parse("public frame, frametype, at, freeze"))
+VERSION >= v"1.11" && eval(Meta.parse("public frame, frametype, at, freeze, native_csys"))
 
 include("info.jl")
 include("constants.jl")
