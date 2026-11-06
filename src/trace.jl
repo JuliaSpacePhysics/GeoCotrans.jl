@@ -1,12 +1,4 @@
-"""
-Trace magnetic field lines using ODE solvers.
-
-Requires loading SciML ODE solver package (e.g., `OrdinaryDiffEqTsit5`) before use.
-
-## API
-
-- [`trace`](@ref), [`find_magequator`](@ref)
-"""
+"""Trace magnetic field lines using ODE solvers"""
 module FieldLineTracing
 
 export trace, find_magequator

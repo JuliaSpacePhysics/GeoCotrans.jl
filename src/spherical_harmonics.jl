@@ -5,13 +5,6 @@ using LinearAlgebra
 
 Evaluate the magnetic field at a point in spherical coordinates with
 Schmidt semi-normalized Gauss coefficients `coeffs.g`, `coeffs.h`; `r` is in units of the model's reference radius.
-
-# Mathematical Formulation
-The magnetic field is derived from the scalar potential:
-```math
-B_r = -\\frac{∂V}{∂r}, \\quad
-B_θ = -\\frac{1}{r}\\frac{∂V}{∂θ}, \\quad
-B_φ = -\\frac{1}{r\\sin θ}\\frac{∂V}{∂φ}
 ```
 """
 @inline function evalsph(coeffs, r, θ, φ, max_degree, max_order = max_degree)

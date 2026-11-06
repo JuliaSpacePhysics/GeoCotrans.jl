@@ -1,10 +1,4 @@
-"""
-    get_dipole_terms(g, h)
-
-Compute dipole parameters (θ, φ, x0, y0, z0, b0) from IGRF coefficients.
-
-Returns a named tuple: (θ, φ, x0, y0, z0, b0)
-"""
+# Compute dipole parameters (θ, φ, x0, y0, z0, b0) from IGRF coefficients.
 function get_dipole_terms(g, h)
     # Extract coefficients
     g10, g11, g20, g21, g22 = g[2], g[3], g[4], g[5], g[6]
@@ -25,17 +19,6 @@ function get_dipole_terms(g, h)
     return (; θ, φ, x0, y0, z0, b0)
 end
 
-
-"""
-    calc_dipole_angle(g10, g11, h11)
-
-Calculate dipole angle (θ, φ) and dipole strength (b0)
-from spherical harmonic coefficients `g10`, `g11`, `h11`.
-
-θ: dipole tilt angle (radians)
-φ: dipole longitude/phase (radians)
-b0: dipole strength (nT)
-"""
 @inline function calc_dipole_angle(g10, g11, h11)
     b0 = sqrt(g10^2 + g11^2 + h11^2)
     θ = acos(-g10 / b0)
@@ -44,6 +27,11 @@ b0: dipole strength (nT)
     return θ, φ, b0
 end
 
+"""
+    calc_dipole_angle(time)
+
+Return dipole tilt angle θ, longitude/phase φ and strength b0 (nT)
+"""
 calc_dipole_angle(time) = calc_dipole_angle(_get_igrf_dipole_coeffs(time)...)
 
 """
