@@ -224,13 +224,14 @@ end
 _first_coeffs(c::GaussCoefficients) = c
 _first_coeffs(c::TimeVaryingGaussCoefficients) = first(first(c.pieces))
 
-getcsys(m::SphericalHarmonicModel) = (m.frame, Spherical())
+native_csys(m::SphericalHarmonicModel) = (m.frame, Spherical())
+Base.@deprecate getcsys(m::SphericalHarmonicModel) GeoCotrans.native_csys(m)
 reference_radius(m::SphericalHarmonicModel) = m.radius
 
 evalmodel(m::SphericalHarmonicModel, r, θ, φ, t) = evalsph(_coeffs_at(m.coeffs, t), r, θ, φ, m.degree, m.order)
 evalmodel(m::SphericalHarmonicModel, ::Cartesian3, 𝐫, t) = evalsph_car(_coeffs_at(m.coeffs, t), 𝐫..., m.degree, m.order)
 # spherical only for spherical input in the model frame
-eval_csys(::SphericalHarmonicModel, csys, from) = from == csys ? csys : (csys[1], Cartesian3())
+eval_csys(m::SphericalHarmonicModel, from) = from == native_csys(m) ? from : (m.frame, Cartesian3())
 _coeffs_at(c::GaussCoefficients, _) = c
 _coeffs_at(c::TimeVaryingGaussCoefficients, t) = c(t)
 

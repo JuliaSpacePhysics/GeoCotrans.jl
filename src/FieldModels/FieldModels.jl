@@ -7,6 +7,13 @@ abstract type CompositeFieldModel <: MagneticFieldModel end
 
 function evalmodel end
 
+"""
+    native_csys(model)
+
+Default `(frame, representation)` of a untagged input.
+"""
+native_csys(model) = getcsys(model)
+
 """Precompute time-dependent state at `t`."""
 freeze(model, t) = model
 
@@ -16,10 +23,10 @@ freeze(model, t) = model
 Bind `model` to `t`, precomputing time-only state and the rotation from `from` to the model's frame.
 """
 function at(model, t, from = nothing)
-    csys = _csys(from, getcsys(model))
+    csys = _csys(from, native_csys(model))
     f = csys[1]
     m = freeze(model, t)
-    mf = getcsys(m)[1]
+    mf = native_csys(m)[1]
     # decided by type so `R` is inferable; equal frame instances (e.g. `GSW`) get an identity matrix
     R = Base.issingletontype(typeof(f)) && mf === f ? I : rotation(f => mf, t)
     return At(m, csys, R, t)
@@ -35,12 +42,12 @@ end
 (a::At)(𝐫; kw...) = _evaluate(a, 𝐫, a.t; kw...)
 (a::At)(x, y, z; kw...) = _evaluate(a, x, y, z, a.t; kw...)
 (a::At)(A::AbstractMatrix; dim = nothing, kw...) = mapsamples(x -> a(SVector{3}(x); kw...), A; dim = _sampledim(A, dim))
-getcsys(a::At) = a.csys
-eval_csys(a::At, csys, from) = (csys[1], Cartesian3())
+native_csys(a::At) = a.csys
+eval_csys(a::At, from) = (a.csys[1], Cartesian3())
 # without rotation the model may read any representation of its frame
-eval_csys(a::At{<:Any, <:Any, <:UniformScaling}, csys, from) = eval_csys(a.model, getcsys(a.model), from)
+eval_csys(a::At{<:Any, <:Any, <:UniformScaling}, from) = eval_csys(a.model, from)
 function evalmodel(a::At, r::AbstractRepresentation, 𝐫, _; kw...)
-    csys = (getcsys(a.model)[1], r)
+    csys = (native_csys(a.model)[1], r)
     return transpose(a.R) * _evaluate(a.model, a.R * SVector{3}(𝐫), a.t; from = csys, to = csys, kw...)
 end
 Base.show(io::IO, a::At) = print(io, "at(", a.model, ", ", a.t, ", ", a.csys[1], ")")
@@ -52,7 +59,7 @@ reference_radius(a::At) = reference_radius(a.model)
 @inline (m::MagneticFieldModel)(𝐫, t = nothing; kw...) = _evaluate(m, 𝐫, t; kw...)
 
 @inline function _evaluate(m, 𝐫, t; from = nothing, to = nothing, kw...)
-    model_csys = getcsys(m)
+    model_csys = native_csys(m)
     from_csys = _csys(𝐫, _csys(from, model_csys))
     to_csys = _csys(to, from_csys)
     return evaluate_model(m, 𝐫, t, from_csys, model_csys, to_csys; kw...)
@@ -71,12 +78,11 @@ _scale_pos(::Cartesian3, pos, s) = SVector{3, Float64}(pos[1] * s, pos[2] * s, p
 # Evaluate a model with automatic coordinate transformation.
 function evaluate_model(model, pos, t, from, model_csys, to; scale = nothing, kw...)
     pos_scaled = isnothing(scale) ? pos : _scale_pos(from[2], pos, scale)
-    csys = eval_csys(model, model_csys, from)
+    csys = eval_csys(model, from)
     model_pos = transform_position(from..., csys..., pos_scaled, t)
     B = evalmodel(model, csys[2], model_pos, t; kw...)
     return transform_field(csys..., to..., B, model_pos, t)
 end
 
-# A model may also evaluate in other representations of its frame than `getcsys`
-eval_csys(model, csys, from) = csys
+eval_csys(model, from) = native_csys(model)
 evalmodel(m, ::AbstractRepresentation, 𝐫, t; kw...) = evalmodel(m, 𝐫..., t; kw...)

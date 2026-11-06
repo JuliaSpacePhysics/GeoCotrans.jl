@@ -10,7 +10,7 @@ struct Geodetic <: AbstractRepresentation end
 """
     getcsys(x)
 
-Coordinate system `(frame, representation)` of a position or field model where its `evalmodel` works in; `nothing` if unknown.
+Coordinate system `(frame, representation)` of coordinate `x`; `nothing` if unknown.
 """
 getcsys(::Any) = nothing
 

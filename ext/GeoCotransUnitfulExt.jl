@@ -1,6 +1,6 @@
 module GeoCotransUnitfulExt
 
-using GeoCotrans: AbstractReferenceFrame, Cartesian3, Spherical, getcsys, reference_radius, _csys
+using GeoCotrans: AbstractReferenceFrame, Cartesian3, Spherical, native_csys, reference_radius, _csys
 import GeoCotrans: _evaluate
 using StaticArrays: SA
 using Unitful: Length, NoUnits, ustrip, @u_str
@@ -10,7 +10,7 @@ _radii(x::Length, R::Real) = ustrip(u"km", x) / R
 # lengths fix the representation, so a bare frame (`GEO()`) adds only the frame; an explicit representation must agree
 function _from(m, from, r)
     bare = from isa Union{AbstractReferenceFrame, Type{<:AbstractReferenceFrame}}
-    f, r_from = _csys(bare ? (from, r) : from, (getcsys(m)[1], r))
+    f, r_from = _csys(bare ? (from, r) : from, (native_csys(m)[1], r))
     r_from == r || throw(ArgumentError("length components are $(nameof(typeof(r))), but `from = $(repr(from))` is $(nameof(typeof(r_from)))"))
     return (f, r)
 end
