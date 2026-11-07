@@ -46,7 +46,7 @@ native_csys(a::At) = a.csys
 eval_csys(a::At, from) = (a.csys[1], Cartesian3())
 # without rotation the model may read any representation of its frame
 eval_csys(a::At{<:Any, <:Any, <:UniformScaling}, from) = eval_csys(a.model, from)
-function evalmodel(a::At, r::AbstractRepresentation, 𝐫, _; kw...)
+function evalmodel(a::At, r::AbstractRepresentation, 𝐫, ::Any; kw...)
     csys = (native_csys(a.model)[1], r)
     return transpose(a.R) * _evaluate(a.model, a.R * SVector{3}(𝐫), a.t; from = csys, to = csys, kw...)
 end
