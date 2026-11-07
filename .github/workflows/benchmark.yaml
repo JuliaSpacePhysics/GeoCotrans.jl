@@ -5,15 +5,17 @@ on:
     branches: [ main ]
     paths-ignore:
       - 'README.md'
-      - 'CONTRIBUTING.md'
       - 'CHANGELOG.md'
       - 'test/**'
       - 'docs/**'
-permissions:
-  pull-requests: write    # action needs to post a comment
+  push:
+    branches:
+      - main
 
 jobs:
   bench:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: MilesCranmer/AirspeedVelocity.jl@action-v1
+    uses: JuliaSpacePhysics/actions/.github/workflows/benchmark.yml@main
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: write
