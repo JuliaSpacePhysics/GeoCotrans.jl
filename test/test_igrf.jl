@@ -88,6 +88,8 @@ end
     for r in (1.0, 2.5), θ in (1.0e-6, 0.3, π / 4, 2.0, π - 1.0e-6), φ in (0.0, 1.0, 4.0)
         @test evalsph((; g, h), r, θ, φ, 13) ≈ B_ref(g, h, r, θ, φ, 13)
         @test evalsph((; g = G, h = H), r, θ, φ, 30, 7) ≈ B_ref(G, H, r, θ, φ, 30, 7)
+        @test evalsph((; g = G, h = H), r, θ, φ, 30, 8) ≈ B_ref(G, H, r, θ, φ, 30, 8)
+        @test evalsph((; g, h), big(r), θ, φ, 13) ≈ B_ref(g, h, r, θ, φ, 13)  # generic (non-Float64) path
     end
     @test_throws BoundsError evalsph((; g, h), 1.0, 0.5, 0.5, 14)
     # At the poles B_θ, B_φ are the limits along the meridian φ

@@ -47,19 +47,28 @@ function _schmidt_recurrence(l, m)
     return ((2l + 1) / s′, s / s′, s)
 end
 
+# Columns α, γ, s in the triangular layout of `get_coeff`
+struct SchmidtTable
+    α::Vector{Float64}
+    γ::Vector{Float64}
+    s::Vector{Float64}
+end
+Base.@propagate_inbounds get_coeff(t::SchmidtTable, l, m) = (get_coeff(t.α, l, m), get_coeff(t.γ, l, m), get_coeff(t.s, l, m))
+
 # Shared and grown on demand: entries depend only on (l, m), so one table serves every degree
 mutable struct SchmidtRecurrence
-    @atomic table::Vector{NTuple{3, Float64}}
+    @atomic table::SchmidtTable
 end
-const SCHMIDT_RECURRENCE = SchmidtRecurrence(NTuple{3, Float64}[])
+const SCHMIDT_RECURRENCE = SchmidtRecurrence(SchmidtTable(Float64[], Float64[], Float64[]))
 
 @inline function schmidt_recurrence(n)
     table = @atomic SCHMIDT_RECURRENCE.table
-    return length(table) < coeff_size(n) ? grow_schmidt_recurrence!(n) : table
+    return length(table.α) < coeff_size(n) ? grow_schmidt_recurrence!(n) : table
 end
 
 @noinline function grow_schmidt_recurrence!(n)
-    table = [_schmidt_recurrence(l, m) for l in 0:n for m in 0:l]
+    rows = [_schmidt_recurrence(l, m) for l in 0:n for m in 0:l]
+    table = SchmidtTable(getindex.(rows, 1), getindex.(rows, 2), getindex.(rows, 3))
     @atomic SCHMIDT_RECURRENCE.table = table
     return table
 end
@@ -72,7 +81,7 @@ end
     R = promote_type(T, eltype(G), eltype(H))
     a² = a * a
     acosθ, asinθ = a * cosθ, a * sinθ
-    Br = Bθ = Bφ = zero(R)
+    Br = Bθ = zero(R)
 
     # m = 0: Pₗ⁰ and its θ-derivative Dₗ⁰ by the differentiated recursion
     P, P₋, D, D₋ = a², zero(T), zero(T), zero(T)
@@ -85,30 +94,87 @@ end
         Bθ += g * D
     end
 
-    # m ≥ 1 field sums factor into Σ Y Q, Σ l Y Q, Σ s Y Qₗ₋₁ and Σ ∂Y/∂φ Q, with Y = g cos mφ + h sin mφ
-    S₀ = S₁ = S₂ = zero(R)
-    Qmm = a² * a
-    sin_mφ, cos_mφ = zero(T), one(T)
-    @inbounds for m in 1:min(max_order, max_degree)
-        sin_mφ, cos_mφ = sin_mφ * cosφ + cos_mφ * sinφ, cos_mφ * cosφ - sin_mφ * sinφ
-        Q, Q₋ = Qmm, zero(T)
-        Sφ = zero(R)
-        for l in m:max_degree
-            α, γ, s = T.(get_coeff(tab, l, m))
-            g, h = get_coeff(G, l, m), get_coeff(H, l, m)
-            Y = muladd(g, cos_mφ, h * sin_mφ)
-            YQ = Y * Q
-            S₀ += YQ
-            S₁ = muladd(l, YQ, S₁)
-            S₂ = muladd(Y, s * Q₋, S₂)
-            Sφ = muladd(muladd(h, cos_mφ, -g * sin_mφ), Q, Sφ)
-            Q, Q₋ = muladd(α * acosθ, Q, -(γ * a²) * Q₋), Q
-        end
-        Bφ += m * Sφ
-        Qmm *= sqrt(T(2m + 1) / (2m + 2)) * asinθ
-    end
+    S₀, S₁, S₂, Bφ = _order_sums(tab, G, H, a, asinθ, acosθ, sinφ, cosφ, max_degree, min(max_order, max_degree))
     return SVector{3, R}(Br + sinθ * (S₀ + S₁), -Bθ - cosθ * S₁ + a * S₂, -Bφ)
 end
+
+# m ≥ 1 field sums factor into S₀ = Σ Y Q, S₁ = Σ l Y Q, S₂ = Σ s Y Qₗ₋₁ and Bφ = Σ m ∂Y/∂φ Q,
+# with Y = g cos mφ + h sin mφ
+@inline function _order_sums(tab, G, H, a::T, asinθ, acosθ, sinφ, cosφ, max_degree, M) where {T}
+    R = promote_type(T, eltype(G), eltype(H))
+    S₀ = S₁ = S₂ = Bφ = zero(R)
+    Qmm = a * a * a
+    sin_mφ, cos_mφ = zero(T), one(T)
+    for m in 1:M
+        sin_mφ, cos_mφ = sin_mφ * cosφ + cos_mφ * sinφ, cos_mφ * cosφ - sin_mφ * sinφ
+        s₀, s₁, s₂, sφ = _order_terms(tab, G, H, m, max_degree, cos_mφ, sin_mφ, Qmm, acosθ, a * a)
+        S₀, S₁, S₂, Bφ = S₀ + s₀, S₁ + s₁, S₂ + s₂, muladd(m, sφ, Bφ)
+        Qmm *= sqrt(T(2m + 1) / (2m + 2)) * asinθ
+    end
+    return S₀, S₁, S₂, Bφ
+end
+
+@inline function _order_terms(tab, G, H, m, max_degree, cos_mφ, sin_mφ, Q::T, acosθ, a²) where {T}
+    R = promote_type(T, eltype(G), eltype(H))
+    s₀ = s₁ = s₂ = sφ = zero(R)
+    Q₋ = zero(T)
+    @inbounds for l in m:max_degree
+        α, γ, s = T.(get_coeff(tab, l, m))
+        g, h = get_coeff(G, l, m), get_coeff(H, l, m)
+        Y = muladd(g, cos_mφ, h * sin_mφ)
+        YQ = Y * Q
+        s₀ += YQ
+        s₁ = muladd(l, YQ, s₁)
+        s₂ = muladd(Y, s * Q₋, s₂)
+        sφ = muladd(muladd(h, cos_mφ, -g * sin_mφ), Q, sφ)
+        Q, Q₋ = muladd(α * acosθ, Q, -(γ * a²) * Q₋), Q
+    end
+    return s₀, s₁, s₂, sφ
+end
+
+# Float64: orders m and m + 1 run in the two lanes of one SIMD vector, adjacent in the triangular layout.
+# The l recursion is serial and the per-term work is throughput-bound, so LLVM does not vectorize the scalar loop itself.
+@inline function _order_sums(tab, G::AbstractArray{Float64}, H::AbstractArray{Float64}, a::Float64, asinθ, acosθ, sinφ, cosφ, max_degree, M)
+    a² = a * a
+    S₀ = S₁ = S₂ = Bφ = 0.0
+    V₀ = V₁ = V₂ = vec2(0.0)
+    vacosθ, vna² = vec2(acosθ), vec2(-a²)
+    Qmm = a² * a
+    sin_mφ, cos_mφ = 0.0, 1.0
+    @inbounds for m in 1:2:M
+        s1, c1 = sin_mφ * cosφ + cos_mφ * sinφ, cos_mφ * cosφ - sin_mφ * sinφ
+        if m == M
+            s₀, s₁, s₂, sφ = _order_terms(tab, G, H, m, max_degree, c1, s1, Qmm, acosθ, a²)
+            S₀, S₁, S₂, Bφ = S₀ + s₀, S₁ + s₁, S₂ + s₂, muladd(m, sφ, Bφ)
+            break
+        end
+        s2, c2 = s1 * cosφ + c1 * sinφ, c1 * cosφ - s1 * sinφ
+        Qmm2 = Qmm * sqrt((2m + 1) / (2m + 2)) * asinθ
+        # l = m has order m only
+        s₀, s₁, s₂, sφ = _order_terms(tab, G, H, m, m, c1, s1, Qmm, acosθ, a²)
+        S₀, S₁, S₂ = S₀ + s₀, S₁ + s₁, S₂ + s₂
+        Q, Q₋ = vec2(get_coeff(tab.α, m, m) * acosθ * Qmm, Qmm2), vec2(Qmm, 0.0)
+        cos_pair, sin_pair, neg_sin_pair = vec2(c1, c2), vec2(s1, s2), vec2(-s1, -s2)
+        Vφ = vec2(sφ, 0.0)
+        for l in (m + 1):max_degree
+            α, γ, σ = _pair(tab.α, l, m), _pair(tab.γ, l, m), _pair(tab.s, l, m)
+            g, h = _pair(G, l, m), _pair(H, l, m)
+            Y = vfma(g, cos_pair, vmul(h, sin_pair))
+            YQ = vmul(Y, Q)
+            V₀ = vadd(V₀, YQ)
+            V₁ = vfma(vec2(l), YQ, V₁)
+            V₂ = vfma(Y, vmul(σ, Q₋), V₂)
+            Vφ = vfma(vfma(h, cos_pair, vmul(g, neg_sin_pair)), Q, Vφ)
+            Q, Q₋ = vfma(vmul(α, vacosθ), Q, vmul(vmul(γ, vna²), Q₋)), Q
+        end
+        Bφ = muladd(m, Vφ[1].value, muladd(m + 1, Vφ[2].value, Bφ))
+        Qmm = Qmm2 * sqrt((2m + 3) / (2m + 4)) * asinθ
+        sin_mφ, cos_mφ = s2, c2
+    end
+    return S₀ + hsum(V₀), S₁ + hsum(V₁), S₂ + hsum(V₂), Bφ
+end
+
+Base.@propagate_inbounds _pair(A, l, m) = vec2(get_coeff(A, l, m), get_coeff(A, l, m + 1))
 
 # Σⱼ terms[j] αʲ⁻¹ elementwise, lazily: `_evalsph` reads each coefficient once
 struct LazyPoly{T, N, A <: Tuple{Vararg{AbstractArray{<:Any, N}}}, R} <: AbstractArray{T, N}
