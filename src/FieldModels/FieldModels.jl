@@ -75,14 +75,17 @@ _evaluator(m, kw) = (x, t) -> m(SVector{3}(x), t; kw...)
 _scale_pos(::Spherical, pos, s) = SVector{3, Float64}(pos[1] * s, pos[2], pos[3])
 _scale_pos(::Cartesian3, pos, s) = SVector{3, Float64}(pos[1] * s, pos[2] * s, pos[3] * s)
 
-# Evaluate a model with automatic coordinate transformation.
-function evaluate_model(model, pos, t, from, model_csys, to; scale = nothing, kw...)
+# Evaluate a model with automatic coordinate transformation
+function evaluate_model(model, pos, t, from, to; scale = nothing, kw...)
     pos_scaled = isnothing(scale) ? pos : _scale_pos(from[2], pos, scale)
     csys = eval_csys(model, from)
     model_pos = transform_position(from..., csys..., pos_scaled, t)
     B = evalmodel(model, csys[2], model_pos, t; kw...)
     return transform_field(csys..., to..., B, model_pos, t)
 end
+
+# Legacy signature with an unused `model_csys`
+evaluate_model(model, pos, t, from, ::Any, to; kw...) = evaluate_model(model, pos, t, from, to; kw...)
 
 eval_csys(model, from) = native_csys(model)
 evalmodel(m, ::AbstractRepresentation, 𝐫, t; kw...) = evalmodel(m, 𝐫..., t; kw...)
